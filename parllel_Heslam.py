@@ -14,11 +14,9 @@ def hist(data, mbin):
     :param mbin: bin
     :return: Return  frequency normalized
     """
-
     cfrq = []
     frq = []
     Count = len(data)
-
     for j in xrange(len(mbin)):
         count_1 = 0
         count_2 = 0
@@ -33,7 +31,7 @@ def hist(data, mbin):
         frq.append(count_2)
 
     frq = np.asarray(frq, dtype=float)
-    return frq/Count
+    return frq, Count
 
 
 def masking_map(map1, nside, npixs, limit):
@@ -80,7 +78,6 @@ npix = hp.pixelfunc.nside2npix(nside)
 
 # Degrading our map 512 to 128
 Haslam_nside = hp.pixelfunc.ud_grade(Haslam_512, nside_out=nside, order_in='RING', order_out='RING')
-
 
 
 def pn_estim(nmin, nmax, loop, count, bmask):
@@ -145,12 +142,11 @@ def pn_estim(nmin, nmax, loop, count, bmask):
 
     bins1 = np.arange(np.amin(pn),  np.amax(pn)+bin_width1, bin_width1)
 
-    frq1 = hist(pn, bins1)
+    frq1, length = hist(pn, bins1)
 
     with open(name3, 'w') as f:
         for i in xrange(len(frq1)):
-            f.write("%f\t%f\n" % (frq1[i], bins1[i]))
-
+            f.write("%f\t%f\t%f\n" % (frq1[i]/length, bins1[i], frq1[i]))
 
 if __name__ == "__main__":
 
