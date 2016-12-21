@@ -44,9 +44,8 @@ def masking_map(map1, nside, npixs, limit):
     scheme. Masking unwanted pixel either by angular cut or temperature cut in
     Haslam
     """
-    count3 = 0
     if limit == -1.0:  # -1.0 for All Sky without masking
-        return map1, npixs
+        return map1
     else:
         area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
         """
@@ -62,8 +61,7 @@ def masking_map(map1, nside, npixs, limit):
             temp = map1[ipix] * area
             if temp > limit:
                 map1[ipix] = hp.UNSEEN
-                count3 += 1
-        return map1, npixs-count3
+        return map1
 
 
 # **********************
@@ -93,24 +91,21 @@ def pn_estim(nmin, nmax, loop, count, bmask):
     """
 
     # You can mask the pixel using masking_map routine
-    Haslam, count = masking_map(Haslam_nside, nside, npix, bmask)
+    Haslam = masking_map(Haslam_nside, nside, npix, bmask)
 
     # making map dimension less dividing T/T_mean in pixel
 
-    avg = np.mean(Haslam)
-    for i in xrange(len(Haslam)):
-        if Haslam[i] != hp.UNSEEN:
-            Haslam[i] /= avg
-
-    pn = np.zeros(count, float)
+    index = (Haslam != hp.UNSEEN)
+    avg = np.mean(Haslam[index])
+    pn = []
+    print avg
 
 # radius = m.radians(loop * 1.0) This when you want to do different cell size
     # area of single pixel of given Nside
-
     area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
-    for ind in xrange(nmin, nmax):
-        theta_cen, phi_cen = hp.pixelfunc.pix2ang(nside, ind)
 
+    for ind in xrange(nmin, nmax):
+# theta_cen, phi_cen = hp.pixelfunc.pix2ang(nside, ind)
         """
         Query disc routine in Healpix and healpy to give pixel within angular distance from pixel center
             if 50 > m.degrees(theta_cen) or  m.degrees(theta_cen) > 130.0:
@@ -120,7 +115,8 @@ def pn_estim(nmin, nmax, loop, count, bmask):
                 Pn[ind] = np.sum(Heslam[hpxidx])*area #*np.pi*radius**2.0
         """
         if Haslam[ind] != hp.UNSEEN:
-            pn[ind] = Haslam[ind] * area  # *np.pi*radius**2.0
+            Haslam[ind] = (Haslam[ind]-avg)/avg
+            pn.append(Haslam[ind] * area)  # *np.pi*radius**2.0
 
     if loop == 128:
         name1 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Haslam_128_AllSky.txt'
@@ -151,6 +147,7 @@ def pn_estim(nmin, nmax, loop, count, bmask):
 if __name__ == "__main__":
 
     npix = hp.pixelfunc.nside2npix(nside)
+    print npix
     count1 = 0
     count2 = 0
     Cell_Count1 = Process(target=pn_estim, args=(0, npix, 128, count1, -1.0))
