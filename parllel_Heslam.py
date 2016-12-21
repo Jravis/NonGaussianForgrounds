@@ -121,11 +121,11 @@ def pn_estim(nmin, nmax, loop, count, bmask):
     if loop == 128:
         name1 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Haslam_128_AllSky.txt'
         name2 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Count_128_AllSky.txt'
-        name3 = '/home/sandeep/Parllel_Heslam/128/CPDF/Frq_Bin_AllSky.txt'
+        name3 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Frq_Bin_AllSky.txt'
     else:
         name1 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Haslam_128_%dK.txt' % loop
         name2 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Count_128_%dK.txt' % loop
-        name3 = '/home/sandeep/Parllel_Heslam/128/CPDF/Frq_Bin_128%d.txt' % loop
+        name3 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Frq_Bin_128%d.txt' % loop
 
     with open(name1, 'w') as f:
         for i in xrange(len(pn)):
