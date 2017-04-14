@@ -30,7 +30,7 @@ def hist(data, mbin):
         cfrq.append(count_1)
         frq.append(count_2)
 
-    frq = np.asarray(frq, dtype=float)
+    frq = np.asarray(frq, dtype=np.double)
     return frq, Count
 
 
@@ -44,8 +44,9 @@ def masking_map(map1, nside, npixs, limit):
     scheme. Masking unwanted pixel either by angular cut or temperature cut in
     Haslam
     """
+    count3 = 0
     if limit == -1.0:  # -1.0 for All Sky without masking
-        return map1
+        return map1, npixs
     else:
         area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
         """
@@ -61,7 +62,8 @@ def masking_map(map1, nside, npixs, limit):
             temp = map1[ipix] * area
             if temp > limit:
                 map1[ipix] = hp.UNSEEN
-        return map1
+                count3 += 1
+        return map1, npixs-count3
 
 
 # **********************
@@ -69,7 +71,8 @@ def masking_map(map1, nside, npixs, limit):
 # **********************
 
 
-name = "/home/sandeep/Parllel_Heslam/lambda_haslam408_dsds.fits"  # Reading Haslam map temprature(K)
+name = "/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits"  # Reading Haslam map temprature(K)
+
 Haslam_512 = hp.fitsfunc.read_map(name)
 nside = 128
 npix = hp.pixelfunc.nside2npix(nside)
@@ -91,10 +94,8 @@ def pn_estim(nmin, nmax, loop, count, bmask):
     """
 
     # You can mask the pixel using masking_map routine
-    Haslam = masking_map(Haslam_nside, nside, npix, bmask)
-
+    Haslam, number = masking_map(Haslam_nside, nside, npix, bmask)
     # making map dimension less dividing T/T_mean in pixel
-
     index = (Haslam != hp.UNSEEN)
     avg = np.mean(Haslam[index])
     pn = []
@@ -114,18 +115,19 @@ def pn_estim(nmin, nmax, loop, count, bmask):
 
                 Pn[ind] = np.sum(Heslam[hpxidx])*area #*np.pi*radius**2.0
         """
+
         if Haslam[ind] != hp.UNSEEN:
-            Haslam[ind] = (Haslam[ind]-avg)/avg
+#            Haslam[ind] = (Haslam[ind]-avg)/avg
             pn.append(Haslam[ind] * area)  # *np.pi*radius**2.0
 
     if loop == 128:
-        name1 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Haslam_128_AllSky.txt'
-        name2 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Count_128_AllSky.txt'
-        name3 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Frq_Bin_AllSky.txt'
+        name1 = '/home/sandeep/Haslam_128_AllSky.txt'
+        name2 = '/home/sandeep/Count_128_AllSky.txt'
+        name3 = '/home/sandeep/Frq_Bin_128_AllSky.txt'
     else:
         name1 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Haslam_128_%dK.txt' % loop
         name2 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Count_128_%dK.txt' % loop
-        name3 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Frq_Bin_128%d.txt' % loop
+        name3 = '/home/sandeep/Parllel_Heslam/Model_fitting_data/Frq_Bin_128_%d.txt' % loop
 
     with open(name1, 'w') as f:
         for i in xrange(len(pn)):
@@ -134,15 +136,17 @@ def pn_estim(nmin, nmax, loop, count, bmask):
     with open(name2, 'w') as f:
         f.write("%d\n" % count)
 
-    bin_width1 = (max(pn) - min(pn))/100
+    pn = np.asarray(pn)
+    bin_width1 = (max(pn) - min(pn))/1000
 
     bins1 = np.arange(np.amin(pn),  np.amax(pn)+bin_width1, bin_width1)
-
     frq1, length = hist(pn, bins1)
+    print'yeh hai number'
+    print bin_width1
 
     with open(name3, 'w') as f:
         for i in xrange(len(frq1)):
-            f.write("%f\t%f\t%f\n" % (frq1[i]/length, bins1[i], frq1[i]))
+            f.write("%0.6e\t%0.6e\t%0.6e\n" % (frq1[i]/np.sum(frq1), bins1[i], frq1[i]))
 
 if __name__ == "__main__":
 
@@ -151,10 +155,16 @@ if __name__ == "__main__":
     count1 = 0
     count2 = 0
     Cell_Count1 = Process(target=pn_estim, args=(0, npix, 128, count1, -1.0))
-    Cell_Count2 = Process(target=pn_estim, args=(0, npix, 50, count2, 0.0032))
+    #Cell_Count2 = Process(target=pn_estim, args=(0, npix, 18, count1, 0.0012))
+    #Cell_Count3 = Process(target=pn_estim, args=(0, npix, 50, count2, 0.0032))
+    #Cell_Count4 = Process(target=pn_estim, args=(0, npix, 200, count2, 0.0128))
 
     Cell_Count1.start()
-    Cell_Count2.start()
+    #Cell_Count2.start()
+    #Cell_Count3.start()
+    #Cell_Count4.start()
     Cell_Count1.join()
-    Cell_Count2.join()
+    #Cell_Count2.join()
+    #Cell_Count3.join()
+    #Cell_Count4.join()
 

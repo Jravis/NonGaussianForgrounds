@@ -13,7 +13,6 @@ from multiprocessing import Process
 # wigner 3j coefficient that comes in Guant integral
 import pywigxjpf as wig
 
-
 name = "/home/sandeep/Haslam/lambda_haslam408_dsds.fits"
 print name
 Haslam_512 = hp.fitsfunc.read_map(name) # Here we Use map from point source subtracted from lambda
@@ -54,7 +53,6 @@ def count_triplet(bin_min, bin_max):
     for l3 in xrange(bin_min, bin_max):
         for l2 in xrange(bin_min, l3+1):
             for l1 in xrange(bin_min, l2+1):
-
                 # we applied selection condition tirangle inequality and#parity condition
                 if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1)%2 ==0:
                     count += 1
@@ -86,25 +84,27 @@ def bispec_estimator(NSIDE_f_est, loop, limit):
     :return: This is main routine which work in parallel as
     different process and compute various Bispectrum.
     """
+    # Allocate memory in wigfix to compute wigner 3j symbol
+
     wig.wig_table_init(1000)
     wig.wig_temp_init(1000)
 
     npix = hp.pixelfunc.nside2npix(NSIDE_f_est)
 
-    # Degrading Map of Nside 512 to Nside 128
+    # Degrading Map of Nside 512 to Nside 128 since resolution of haslam is 56 arcmin
 
-    Haslam_nside  = hp.pixelfunc.ud_grade(Haslam_512, nside_out=
-                    NSIDE_f_est, order_in= 'RING', order_out='RING')
+    Haslam_nside = hp.pixelfunc.ud_grade(Haslam_512, nside_out=
+                    NSIDE_f_est, order_in='RING', order_out='RING')
 
     # Masking map and obtaining Binary mask
     Haslam, Binary_Mask = masking_map(Haslam_nside, NSIDE_f_est, npix,
                                       limit)
-
     # Max value of l that we are looking at and total l bin
     LMAX = 250
-    Nbin = 40
-    print LMAX, Nbin
+    Nbin = 40 # I am using equal width bin one can use varying width bins also
 
+    print LMAX, Nbin
+    # APS(angular power spectrum)
     # APS of given masked map using anfast
 
     Cl = hp.sphtfunc.anafast(Haslam, map2=None, nspec=None, lmax=None,
@@ -136,7 +136,7 @@ def bispec_estimator(NSIDE_f_est, loop, limit):
         cls = hp.sphtfunc.alm2cl(alm, alms2=None, lmax=None, mmax=None,
               lmax_out=None, nspec=None)
 
-        # Given cl one can compute map
+        # Given cl one can compute map this gives maximally filtered map
 
         Map = hp.sphtfunc.synfast(cls, NSIDE_f_est, lmax=None, mmax=None, alm=False,
               pol=True, pixwin=False, fwhm=0.0, sigma=None, new=False,
@@ -155,6 +155,8 @@ def bispec_estimator(NSIDE_f_est, loop, limit):
         print temp
         temp += 5
     print index
+
+    # index of these maps are now aquired
 
     name1 = '/home/sandeep/final_Bispectrum/%d/Bin_Bispectrum_%d_%d.txt' % (NSIDE_f_est, NSIDE_f_est, loop)
     with open(name1, 'w') as f:
@@ -179,7 +181,7 @@ def bispec_estimator(NSIDE_f_est, loop, limit):
 
                         alpha = np.sqrt((2*i1+1) * (2*i2+1) * (2*i3+1)) * (wigner/np.sqrt(np.pi*4.0))
 
-                        # Bispectrum Estimation
+                        # Bispectrum Estimation in next phase I'll parllel this loop
                         for ipix in xrange(0, npix):
                             Bis += Esti_Map[i, ipix]*Esti_Map[j, ipix]*Esti_Map[k, ipix]*Binary_Mask[ipix]
 
