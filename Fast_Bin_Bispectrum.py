@@ -105,7 +105,6 @@ def bispec_estimator(nside_f_est, loop, limit):
     ap_map = apodiz(binary_mask)
     haslam = Haslam_512 * ap_map
 
-
 # binned map  equation(6) casaponsa et. al.
     lmax = 250
     nbin = 12
@@ -140,8 +139,6 @@ def bispec_estimator(nside_f_est, loop, limit):
     cl = hp.sphtfunc.anafast(haslam, lmax=lmax, iter=3)
     bin_cl = []
 
-
-# Var have cl1*cl2*cl3  binned in l equation (2.11) in Bucher et al 2015
     for i in xrange(0, nbin):
         cl_sum = 0.0
         ini = int(index[i])
@@ -150,7 +147,7 @@ def bispec_estimator(nside_f_est, loop, limit):
             for j in xrange(ini, final):
                 cl_sum += cl[j]
             bin_cl.append(cl_sum)
-        bin_cl = np.asarray(bin_cl)
+    bin_cl = np.asarray(bin_cl)
 
     s1 = '/home/sandeep/final_Bispectrum/DimensionlessQ_Bispec/Temp_Fluctuation'
     s2 = '/Rework_16April2017/DimensionLess_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)

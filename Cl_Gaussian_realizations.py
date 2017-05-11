@@ -13,7 +13,7 @@ import math as m
 from multiprocessing import Process
 
 
-name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
+name = '/home/tolstoy/Documents/HASLAM/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
 lmax = 251
@@ -111,8 +111,8 @@ def gaussian_maps(nmin, nmax):
     haslam = Haslam_512 * ap_map
 
     cl = hp.sphtfunc.anafast(haslam, lmax=250, iter=3)
-    s1 = "/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009"
-    s2 = "/Gaussian_Haslam_Maps/haslam_200K_cl.txt"
+    s1 = "/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009"
+    s2 = "/Gaussian_Haslam_cl/haslam_200K_cl.txt"
     name = s1+s2
     np.savetxt(name, cl, fmt="%0.6f")
     # creating filtered map
@@ -120,17 +120,18 @@ def gaussian_maps(nmin, nmax):
         Map = hp.sphtfunc.synfast(cl, NSIDE, lmax=250, pol=True, pixwin=False, fwhm=0.0, sigma=None, verbose=False)
         Map = Map*ap_map
         Map_cl = hp.sphtfunc.anafast(Map, lmax=250, iter=3)
-#       hp.mollview(Map, xsize=2000, unit=r'$T_{B}(K)$', nest=False)
-#       hp.mollview(ap_map, xsize=2000, unit=r'$T_{B}(K)$', nest=False)
-        s1 = "/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009"
-        s2 = "/Gaussian_Haslam_Maps/haslam_gaussMap_cl_%d.txt" % i
-        name = s1+s2
-        np.savetxt(name, Map_cl, fmt="%0.6f")
+        s1 = "/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009"
+        s2 = "/Gaussian_Haslam_cl/haslam_gaussMap_cl_%d.txt" % i
+        filename = s1+s2
+        np.savetxt(filename, Map_cl, fmt='%0.6f')
+        s1 = "/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009"
+        s2 = "/Gaussian_Haslam_Maps/haslam_gaussMap_%d.fits" % i
+        filename = s1+s2
+        hp.fitsfunc.write_map(filename, Map)
+
 
 if __name__ == "__main__":
 
-    total = 1000
-    Map_num = 1000/5
     Cell_Count1 = Process(target=gaussian_maps, args=(0, 200))
     Cell_Count1.start()
     Cell_Count2 = Process(target=gaussian_maps, args=(200, 401))
@@ -139,20 +140,21 @@ if __name__ == "__main__":
     Cell_Count3.start()
     Cell_Count4 = Process(target=gaussian_maps, args=(800, 1001))
     Cell_Count4.start()
+
+    Cell_Count1.join()
     Cell_Count2.join()
     Cell_Count3.join()
     Cell_Count4.join()
-    Cell_Count1.join()
 
-    esti_cl = np.zeros((1000, lmax), dtype= np.float32)
-    s1 = "/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009"
-    s2 = "/Gaussian_Haslam_Maps/haslam_200K_cl.txt"
+    esti_cl = np.zeros((1000, lmax), dtype=np.float32)
+    s1 = "/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009"
+    s2 = "/Gaussian_Haslam_cl/haslam_200K_cl.txt"
     name = s1+s2
 
     cl = np.genfromtxt(name)
     for i in xrange(0, 1000):
-        s1 = "/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009"
-        s2 = "/Gaussian_Haslam_Maps/haslam_gaussMap_cl_%d.txt" % i
+        s1 = "/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009"
+        s2 = "/Gaussian_Haslam_cl/haslam_gaussMap_cl_%d.txt" % i
         name = s1+s2
         Map_cl = np.genfromtxt(name)
         esti_cl[i, :] = Map_cl
@@ -175,6 +177,6 @@ if __name__ == "__main__":
     plt.minorticks_on()
     plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=14)
     plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
-    plt.savefig("/home/sandeep/final_Bispectrum/1000Gaussian_Cl.eps",
+    plt.savefig("/home/tolstoy/Documents/HASLAM/1000Gaussian_Cl.eps",
                 dpi=100)
     plt.show()
