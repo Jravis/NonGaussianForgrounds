@@ -120,6 +120,8 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
         for i in xrange(len(index)):
             index[i] = int(index[i])
 
+        bin_arr = [ [] for i in range(12)]
+
         esti_map = np.zeros((nbin, npix), dtype=np.double)
         fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
         beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
@@ -130,8 +132,11 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
             window_func = np.zeros(lmax, float)
             ini = int(index[i])
             if i+1 < nbin:
+
                 final = int(index[i+1])
-                for j in xrange(ini, final):# Summing over all l in a given bin
+                bin_arr[i].append(range(ini, final))
+
+                for j in xrange(ini, final):       # Summing over all l in a given bin
                     window_func[j] = 1.0
                     alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
                     beam = 1./beam_l
@@ -140,7 +145,6 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                     filtered_map += hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
             esti_map[i, :] = filtered_map
-
 
         cl = hp.sphtfunc.anafast(haslam, lmax=lmax, iter=3)
         bin_cl = np.zeros(nbin, dtype=np.float32)
@@ -162,21 +166,28 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
             for i in xrange(0, nbin):
                 for j in xrange(0, i+1):
                     for k in xrange(0, j+1):
-                        i3 = index[i]
-                        i2 = index[j]
-                        i1 = index[k]
-                        if abs(i2-i1) <= i3 <= i2+i1 and (i3+i2+i1) % 2 == 0:
-                            b = [2*i1, 2*i2, 2*i3, 2*0, 2*0, 2*0]
-                            wigner = wig.wig3jj(b)
-                            alpha = np.sqrt(((2*i1+1) * (2*i2+1) * (2*i3+1)) / (4.*np.pi)) * wigner
-                            bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                            ang_avg_bis = bis/alpha
-                            trip_count = count_triplet(i1, i3)
-                            if trip_count != 0.:
-                                bis /= (1.0*trip_count)
-                                var_bis = (g(i1, i2, i3)/trip_count**2)*alpha**2*bin_cl[i]*bin_cl[j]*bin_cl[k]
-                                f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, ang_avg_bis,
-                                        var_bis, bin_cl[k], bin_cl[j], bin_cl[i], i1, i2, i3))
+
+                        avgbis = 0.0
+
+                        if bin_arr[i] == bin_arr[0] or bin_arr[i] == bin_arr[1]:
+                            print bin_arr[i], bin_arr[j], bin_arr[k]
+                            if min(bin_arr[k])-max(bin_arr[j]) <= max(bin_arr[i]) <= max(bin_arr[k])+max(bin_arr[j]):
+                                l = bin_arr[i]+bin_arr[j]+bin_arr[k]
+                                if l % 2 == 0:
+                                    bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
+                                    trip_count = count_triplet(min(bin_arr[i]), max(bin_arr[k]))
+                                    if trip_count != 0.:
+                                        avgbis /= (1.0*trip_count)
+                                        f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
+                        else:
+                            if min(bin_arr[k])-max(bin_arr[j]) <= max(bin_arr[i]) <= max(bin_arr[k])+max(bin_arr[j]):
+                                bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
+                                trip_count = count_triplet(min(bin_arr[i]), max(bin_arr[k]))
+                                if trip_count != 0.:
+                                    avgbis /= (1.0*trip_count)
+                                    f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
+
+
 if __name__ == "__main__":
 
     NSIDE = 512
