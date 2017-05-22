@@ -1,129 +1,122 @@
 import numpy as np
 import healpy as hp
 from multiprocessing import Process
-import pywigxjpf as wig
-from numba import njit
-import math as m
-from numba import jitclass
-from CMB_binned_bispectrum import map_making
+import CMB_binned_bispectrum as CB
+bins = 10 ** np.linspace(np.log10(2), np.log10(1024), 25)
 
-class binned_bispectrum:
-
-    map_making.nside_f_est =512
-    map_making.masking ='No'
-    map_making.apodization = 'No'
+for i in xrange(len(bins)):
+    bins[i] = int(bins[i])
+bins = np.delete(bins, 0)
 
 
-    wig.wig_table_init(1000)
-    wig.wig_temp_init(1000)
+def code_test(nside, nmin, nmax):
+    for fn in xrange(nmin, nmax):
+        if fn < 10:
+            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_000%d_v3.fits' % fn
+            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_000%d_v3.fits' % fn
+        if 10 <= fn < 100:
+            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_00%d_v3.fits' % fn
+            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_00%d_v3.fits' % fn
+        if 100 <= fn < 1000:
+            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_0%d_v3.fits' % fn
+            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_0%d_v3.fits' % fn
 
-    # binned map  equation(6) casaponsa et. al.
-    lmax = 250
-    nbin = 12
-    # using Logrithmic bins
-    index = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)  # logrithmic bins
-    for i in xrange(len(index)):
-        index[i] = int(index[i])
-    print index
-    def __init__(self):
+        els_alm_l = hp.fitsfunc.read_alm(filename)
+        els_alm_nl = hp.fitsfunc.read_alm(filename1)
+        test = CB.binned_bispectrum(els_alm_l, els_alm_nl, bins, 1.0, nside)
+        bis, avg_bis, i, j, k = test.bispectrum()
+        filename = '/home/sandeep/final_Bispectrum/fnl_test/900_fnl_1_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
+        np.savetxt(filename, zip(bis, avg_bis, i, j, k), fmt='%0.6e,%0.6e,%d,%d,%d', delimiter=',',
+                   header='bis,avg_bis,i,j,k')
 
+if __name__ == "__main__":
 
-    @njit()
-    def count_triplet(bin_min, bin_max):
-        """
-        This routine count number of valid l-triplet in a i-trplet bin
-        which we use to evaluate average
-        :param bin_min:
-        :param bin_max:
-        :return:
-        """
-        count = 0
-        for l3 in xrange(bin_min, bin_max):
-            for l2 in xrange(bin_min, l3+1):
-                for l1 in xrange(bin_min, l2+1):
-                    if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:  # we applied selection condition tirangle inequality and#parity condition
-                        count += 1
-        return count
+    NSIDE = 512
 
-    @njit()
-    def g(l1, l2, l3):
+    Cell_Count1 = Process(target=code_test, args=(NSIDE, 1, 31))
+    Cell_Count1.start()
 
-        """
-        :param l1:
-        :param l2:
-        :param l3:
-        :return:
-        """
-        if l1 == l2 and l2 == l3:
-            return 6.0
-        elif l1 == l2 or l2 == l3 or l3 == l1:
-            return 2.0
-        else:
-            return 1.0
+    Cell_Count2 = Process(target=code_test, args=(NSIDE, 31, 61))
+    Cell_Count2.start()
+    Cell_Count3 = Process(target=code_test, args=(NSIDE, 61, 91))
+    Cell_Count3.start()
+    Cell_Count4 = Process(target=code_test, args=(NSIDE, 91, 121))
+    Cell_Count4.start()
+    Cell_Count5 = Process(target=code_test, args=(NSIDE,  121, 151))
+    Cell_Count5.start()
+    Cell_Count6 = Process(target=code_test, args=(NSIDE, 151, 181))
+    Cell_Count6.start()
+    Cell_Count7 = Process(target=code_test, args=(NSIDE, 181, 211))
+    Cell_Count7.start()
+    Cell_Count8 = Process(target=code_test, args=(NSIDE, 211, 241))
+    Cell_Count8.start()
+    Cell_Count9 = Process(target=code_test, args=(NSIDE, 241, 271))
+    Cell_Count9.start()
+    Cell_Count10 = Process(target=code_test, args=(NSIDE, 271, 301))
+    Cell_Count10.start()
+    Cell_Count11 = Process(target=code_test, args=(NSIDE, 301, 331))
+    Cell_Count11.start()
+    Cell_Count12 = Process(target=code_test, args=(NSIDE, 331, 361))
+    Cell_Count12.start()
+    Cell_Count13 = Process(target=code_test, args=(NSIDE, 361, 391))
+    Cell_Count13.start()
+    Cell_Count14 = Process(target=code_test, args=(NSIDE, 391, 421))
+    Cell_Count14.start()
+    Cell_Count15 = Process(target=code_test, args=(NSIDE, 421, 451))
+    Cell_Count15.start()
+    Cell_Count16 = Process(target=code_test, args=(NSIDE, 451, 481))
+    Cell_Count16.start()
+    Cell_Count17 = Process(target=code_test, args=(NSIDE, 511, 541))
+    Cell_Count17.start()
+    Cell_Count18 = Process(target=code_test, args=(NSIDE, 541, 571))
+    Cell_Count18.start()
+    Cell_Count19 = Process(target=code_test, args=(NSIDE, 571, 601))
+    Cell_Count19.start()
+    Cell_Count20 = Process(target=code_test, args=(NSIDE, 601, 631))
+    Cell_Count20.start()
+    Cell_Count21 = Process(target=code_test, args=(NSIDE, 631, 661))
+    Cell_Count21.start()
+    Cell_Count22 = Process(target=code_test, args=(NSIDE, 661, 691))
+    Cell_Count22.start()
+    Cell_Count23 = Process(target=code_test, args=(NSIDE, 691, 721))
+    Cell_Count23.start()
+    Cell_Count24 = Process(target=code_test, args=(NSIDE, 721, 751))
+    Cell_Count24.start()
+    Cell_Count25 = Process(target=code_test, args=(NSIDE, 751, 781))
+    Cell_Count25.start()
+    Cell_Count26 = Process(target=code_test, args=(NSIDE, 781, 831))
+    Cell_Count26.start()
+    Cell_Count27 = Process(target=code_test, args=(NSIDE, 831, 861))
+    Cell_Count27.start()
+    Cell_Count28 = Process(target=code_test, args=(NSIDE, 861, 900))
+    Cell_Count28.start()
 
-    @njit()
-    def summation(arr1, arr2, arr3, arr4, num_pix):
-        """
-        :param arr1:
-        :param arr2:
-        :param arr3:
-        :param arr4:
-        :param num_pix:
-        :return:
-        """
-        bi_sum = 0.0
-        for ipix in xrange(0, num_pix):
-            product = arr1[ipix]*arr2[ipix]*arr3[ipix]*arr4[ipix]
-            bi_sum += product
-        bi_sum /= (4.0*np.pi*np.sum(arr4))
-        return bi_sum
+    Cell_Count1.join()
+    Cell_Count2.join()
+    Cell_Count3.join()
+    Cell_Count4.join()
+    Cell_Count5.join()
+    Cell_Count6.join()
+    Cell_Count7.join()
+    Cell_Count8.join()
+    Cell_Count9.join()
+    Cell_Count10.join()
+    Cell_Count11.join()
+    Cell_Count12.join()
+    Cell_Count13.join()
+    Cell_Count14.join()
+    Cell_Count15.join()
+    Cell_Count16.join()
+    Cell_Count17.join()
+    Cell_Count18.join()
+    Cell_Count19.join()
+    Cell_Count20.join()
+    Cell_Count21.join()
+    Cell_Count22.join()
+    Cell_Count23.join()
+    Cell_Count24.join()
+    Cell_Count25.join()
+    Cell_Count26.join()
+    Cell_Count27.join()
+    Cell_Count28.join()
 
-
-
-    def bispec_estimator(nside_f_est, loop, limit):
-        """
-        :param nside_f_est:
-        :param loop:
-        :param limit:
-        :return:
-        """
-        # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
-
-        cl = hp.sphtfunc.anafast(map_making, lmax=lmax, iter=3)
-        bin_cl = []
-
-        # Var have cl1*cl2*cl3  binned in l equation (2.11) in Bucher et al 2015
-        for i in xrange(0, nbin):
-            cl_sum = 0.0
-            ini = int(index[i])
-            if i+1 < nbin:
-                final = int(index[i+1])
-                for j in xrange(ini, final):
-                    cl_sum += cl[j]
-                bin_cl.append(cl_sum)
-            bin_cl = np.asarray(bin_cl)
-
-        s1 = '/home/sandeep/final_Bispectrum/DimensionlessQ_Bispec/Temp_Fluctuation'
-        s2 = '/Rework_16April2017/DimensionLess_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
-        file_name = s1+s2
-
-        with open(file_name, 'w') as f:
-            f.write("Bis\tangAvg_Bis\tVarB\tCl1\tCl2\tCl3\ti1\ti2\ti3\tTripCount\n")
-            for i in xrange(0, nbin):
-                for j in xrange(0, i+1):
-                    for k in xrange(0, j+1):
-                        i3 = index[i]
-                        i2 = index[j]
-                        i1 = index[k]
-                        if abs(i2-i1) <= i3 <= i2+i1 and (i3+i2+i1) % 2 == 0:
-                        b = [2*i1, 2*i2, 2*i3, 2*0, 2*0, 2*0]
-                        wigner = wig.wig3jj(b)
-                        alpha = np.sqrt(((2*i1+1) * (2*i2+1) * (2*i3+1)) / (4.*np.pi)) * wigner
-                        bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                        ang_avg_bis = bis/alpha
-                        trip_count = count_triplet(i1, i3)
-                        if trip_count != 0.:
-                            bis /= (1.0*trip_count)
-                            var_bis = (g(i1, i2, i3)/trip_count**2)*alpha**2*bin_cl[i]*bin_cl[j]*bin_cl[k]
-                            f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, ang_avg_bis,
-                                    var_bis, bin_cl[i], bin_cl[j], bin_cl[k], i3, i2, i1))

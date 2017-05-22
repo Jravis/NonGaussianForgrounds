@@ -29,6 +29,10 @@ def masking_map(map1, nside, npix, limit):
         temp = map1[ipix]*area
         if temp < limit:
             mask[ipix] = 1.0
+    for ipix in xrange(0, npix):
+        theta, phi = hp.pixelfunc.pix2ang(nside, ipix)
+        if -20. <= np.degrees(theta) <= 20:
+            mask[ipix] = 0.0
     return mask
 
 
@@ -84,6 +88,8 @@ def summation(arr1, arr2, arr3, arr4, num_pix):
     :param num_pix:
     :return:
     """
+    # print "numpix %d -" % num_pix
+    #print "sum mask %d -" % np.sum(arr4)
     bi_sum = 0.0
     for ipix in xrange(0, num_pix):
         product = arr1[ipix]*arr2[ipix]*arr3[ipix]*arr4[ipix]
@@ -114,7 +120,7 @@ def bispec_estimator(nside_f_est, loop, limit):
         index[i] = int(index[i])
     print index
     # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
-
+    bin_arr = [[] for i in range(12)]
     esti_map = np.zeros((nbin, npix), dtype=np.double)
     fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
     beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
@@ -126,15 +132,16 @@ def bispec_estimator(nside_f_est, loop, limit):
         ini = int(index[i])
         if i+1 < nbin:
             final = int(index[i+1])
+            bin_arr[i].append(range(ini, final))
             for j in xrange(ini, final):# Summing over all l in a given bin
                 window_func[j] = 1.0
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
                 beam = 1./beam_l
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, beam, mmax=None, inplace=True)
                 alm_true = alm_obs
-                filtered_map += hp.sphtfunc.alm2map(alm_true, nside_f_est)
+                filtered_map += hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    esti_map[i, :] = filtered_map
+            esti_map[i, :] = filtered_map
 
     cl = hp.sphtfunc.anafast(haslam, lmax=lmax, iter=3)
     bin_cl = []
@@ -149,50 +156,43 @@ def bispec_estimator(nside_f_est, loop, limit):
             bin_cl.append(cl_sum)
     bin_cl = np.asarray(bin_cl)
 
-    s1 = '/home/sandeep/final_Bispectrum/DimensionlessQ_Bispec/Temp_Fluctuation'
-    s2 = '/Rework_16April2017/DimensionLess_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/home/sandeep/final_Bispectrum/'
+    s2 = 'Analysis_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
 
     with open(file_name, 'w') as f:
-        f.write("Bis\tangAvg_Bis\tVarB\tCl1\tCl2\tCl3\ti1\ti2\ti3\tTripCount\n")
-        for i in xrange(0, nbin):
-            for j in xrange(0, i+1):
-                for k in xrange(0, j+1):
-                    i3 = index[i]
-                    i2 = index[j]
-                    i1 = index[k]
-                    if abs(i2-i1) <= i3 <= i2+i1 and (i3+i2+i1) % 2 == 0:
-                        b = [2*i1, 2*i2, 2*i3, 2*0, 2*0, 2*0]
-                        wigner = wig.wig3jj(b)
-                        alpha = np.sqrt(((2*i1+1) * (2*i2+1) * (2*i3+1)) / (4.*np.pi)) * wigner
+        f.write("Bis\tavg_Bis\tCl1\tCl2\tCl3\ti\tj\tk\n")
+        for i in xrange(0, nbin - 1):
+            for j in xrange(0, i + 1):
+                for k in xrange(0, j + 1):
+                    print i, j, k
+                    print np.min(bin_arr[k]) - np.max(bin_arr[j]), np.max(bin_arr[i]), np.max(bin_arr[k]) + np.max(bin_arr[j])
+                    print np.min(bin_arr[k]), np.max(bin_arr[i])
+                    if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
                         bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                        ang_avg_bis = bis/alpha
-                        trip_count = count_triplet(i1, i3)
+                        trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
                         if trip_count != 0.:
-                            bis /= (1.0*trip_count)
-                            var_bis = (g(i1, i2, i3)/trip_count**2)*alpha**2*bin_cl[i]*bin_cl[j]*bin_cl[k]
-                            f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, ang_avg_bis,
-                                    var_bis, bin_cl[i], bin_cl[j], bin_cl[k], i3, i2, i1))
+                            avgbis = bis/(1.0 * trip_count)
+                            f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (
+                                    bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
 
 if __name__ == "__main__":
 
-    print "Enter the Nside to which you want to upgrade or degrade the given map"
-    NSIDE = int(raw_input(""))
-    print "NSIDE = %d" % NSIDE
+    NSIDE = 512
 
-    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
-    Cell_Count1.start()
+    #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
+    #Cell_Count1.start()
     Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     Cell_Count2.start()
-    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
-    Cell_Count3.start()
-    Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
-    Cell_Count4.start()
+    #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
+    #Cell_Count3.start()
+    #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
+    #Cell_Count4.start()
 
     #Cell_Count1.join()
     #Cell_Count2.join()
-    #Cell_Count3.join()
-    Cell_Count4.join()
+    Cell_Count2.join()
+    #Cell_Count4.join()
 
 
 

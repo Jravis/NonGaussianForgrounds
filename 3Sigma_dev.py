@@ -11,7 +11,7 @@ import pywigxjpf as wig
 from numba import njit
 import math as m
 
-name = '/home/tolstoy/Documents/HASLAM/haslam408_dsds_Remazeilles2014.fits'
+name = '/home/sandeep/final_Bispectrum/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
 
@@ -108,8 +108,8 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
 
     for fn in xrange(nmin, nmax):
         
-        s1 = '/home/tolstoy/Documents/HASLAM/'
-        s2 = 'NonGuassian_Maps_Elsner2009/Gaussian_Haslam_Maps/haslam_gaussMap_%d.fits' % fn
+        s1 = '/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009'
+        s2 = '/Gaussian_50K_test/Gaussian_Haslam_Maps/haslam_gaussMap_%d.fits' % fn
         filename = s1+s2
         haslam = hp.fitsfunc.read_map(filename)
         lmax = 251
@@ -120,7 +120,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
         for i in xrange(len(index)):
             index[i] = int(index[i])
 
-        bin_arr = [ [] for i in range(12)]
+        bin_arr = [[] for i in range(12)]
 
         esti_map = np.zeros((nbin, npix), dtype=np.double)
         fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
@@ -157,50 +157,58 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                     cl_sum += cl[j]
             bin_cl[i] = np.asarray(cl_sum)
 
-        s1 = '/home/tolstoy/Documents/HASLAM/NonGuassian_Maps_Elsner2009/'
-        s2 = 'Gaussian_Bispectrum/BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
+        s1 = '/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009'
+        s2 = '/Gaussian_50K_test/Gaussian_Bispectrum/BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
         print file_name
         with open(file_name, 'w') as f:
-            f.write("Bis\tangAvg_Bis\tVarB\tCl1\tCl2\tCl3\ti1\ti2\ti3\n")
-            for i in xrange(0, nbin):
+            f.write("Bis\tavg_Bis\tCl1\tCl2\tCl3\ti\tj\tk\n")
+            for i in xrange(0, nbin-1):
                 for j in xrange(0, i+1):
                     for k in xrange(0, j+1):
-
-                        avgbis = 0.0
-
-                        if bin_arr[i] == bin_arr[0] or bin_arr[i] == bin_arr[1]:
-                            print bin_arr[i], bin_arr[j], bin_arr[k]
-                            if min(bin_arr[k])-max(bin_arr[j]) <= max(bin_arr[i]) <= max(bin_arr[k])+max(bin_arr[j]):
-                                l = bin_arr[i]+bin_arr[j]+bin_arr[k]
-                                if l % 2 == 0:
-                                    bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                                    trip_count = count_triplet(min(bin_arr[i]), max(bin_arr[k]))
-                                    if trip_count != 0.:
-                                        avgbis /= (1.0*trip_count)
-                                        f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
-                        else:
-                            if min(bin_arr[k])-max(bin_arr[j]) <= max(bin_arr[i]) <= max(bin_arr[k])+max(bin_arr[j]):
-                                bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                                trip_count = count_triplet(min(bin_arr[i]), max(bin_arr[k]))
-                                if trip_count != 0.:
-                                    avgbis /= (1.0*trip_count)
-                                    f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
+                        if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
+                            bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
+                            trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
+                            if trip_count != 0.:
+                                avgbis = bis / (1.0 * trip_count)
+                                f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (
+                                        bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
 
 
 if __name__ == "__main__":
 
     NSIDE = 512
-    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 200))
+    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
+    #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 101))
+
+    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 0, 101))
     Cell_Count1.start()
-    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 200, 400))
+    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 101, 201))
     Cell_Count2.start()
-    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 400, 800))
+    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 201, 301))
     Cell_Count3.start()
-    Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 800, 1001))
+    Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 301, 401))
     Cell_Count4.start()
+    Cell_Count5 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 401, 501))
+    Cell_Count5.start()
+    Cell_Count6 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 501, 601))
+    Cell_Count6.start()
+    Cell_Count7 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 601, 701))
+    Cell_Count7.start()
+    Cell_Count8 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 701, 801))
+    Cell_Count8.start()
+    Cell_Count9 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 801, 901))
+    Cell_Count9.start()
+    Cell_Count10 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162, 901, 1001))
+    Cell_Count10.start()
 
     Cell_Count1.join()
     Cell_Count2.join()
     Cell_Count3.join()
     Cell_Count4.join()
+    Cell_Count5.join()
+    Cell_Count6.join()
+    Cell_Count7.join()
+    Cell_Count8.join()
+    Cell_Count9.join()
+    Cell_Count10.join()
