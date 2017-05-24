@@ -143,7 +143,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, 1./beam_l, mmax=None, inplace=True)
                 alm_true = alm_obs
-                esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7522
+                esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
         s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bispectrum/'
         s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
@@ -155,10 +155,11 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                 for j in xrange(i, nbin-1):
                     for k in xrange(j, nbin-1):
 
-                        if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
+                        if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) \
+                           + np.max(bin_arr[j]):
                             bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
                             trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
-                            f.write("%0.6e\t%d\t%d\t%d\t%0.6f\n" % (bis, i, j, k, trip_count))
+                            f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
 if __name__ == "__main__":
