@@ -2,6 +2,7 @@ import numpy as np
 import healpy as hp
 from multiprocessing import Process
 import CMB_binned_bispectrum as CB
+
 bins = 10 ** np.linspace(np.log10(2), np.log10(1024), 25)
 
 for i in xrange(len(bins)):
@@ -12,21 +13,23 @@ bins = np.delete(bins, 0)
 def code_test(nside, nmin, nmax):
     for fn in xrange(nmin, nmax):
         if fn < 10:
-            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_000%d_v3.fits' % fn
-            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_000%d_v3.fits' % fn
+            filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_000%d_v3.fits' % fn
+            filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_000%d_v3.fits' % fn
         if 10 <= fn < 100:
-            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_00%d_v3.fits' % fn
-            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_00%d_v3.fits' % fn
+            filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_00%d_v3.fits' % fn
+            filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_00%d_v3.fits' % fn
         if 100 <= fn < 1000:
-            filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_0%d_v3.fits' % fn
-            filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_0%d_v3.fits' % fn
+            filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_0%d_v3.fits' % fn
+            filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_0%d_v3.fits' % fn
 
         els_alm_l = hp.fitsfunc.read_alm(filename)
         els_alm_nl = hp.fitsfunc.read_alm(filename1)
         test = CB.binned_bispectrum(els_alm_l, els_alm_nl, bins, 1.0, nside)
-        bis, avg_bis, i, j, k = test.bispectrum()
-        filename = '/home/sandeep/final_Bispectrum/fnl_test/900_fnl_1_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
-        np.savetxt(filename, zip(bis, avg_bis, i, j, k), fmt='%0.6e,%0.6e,%d,%d,%d', delimiter=',',
+        bis, avg_bis, i, j, k, trip_count = test.bispectrum()
+
+        filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/900_fnl_1_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
+
+        np.savetxt(filename, zip(bis, avg_bis, i, j, k, trip_count), fmt='%0.6e,%0.6e,%d,%d,%d', delimiter=',',
                    header='bis,avg_bis,i,j,k')
 
 if __name__ == "__main__":

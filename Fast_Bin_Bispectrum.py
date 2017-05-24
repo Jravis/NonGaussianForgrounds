@@ -105,93 +105,82 @@ def bispec_estimator(nside_f_est, loop, limit):
     :param limit:
     :return:
     """
+
 # Masking and apodization
+
     npix = hp.nside2npix(nside_f_est)
     binary_mask = masking_map(Haslam_512, nside_f_est, npix, limit)
     ap_map = apodiz(binary_mask)
     haslam = Haslam_512 * ap_map
 
+
 # binned map  equation(6) casaponsa et. al.
+
     lmax = 250
     nbin = 12
+
 # using Logrithmic bins
+
     index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
+
     for i in xrange(len(index)):
         index[i] = int(index[i])
+
     print index
+
     # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
+
     bin_arr = [[] for i in range(12)]
+
     esti_map = np.zeros((nbin, npix), dtype=np.double)
     fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
     beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
-    filtered_map = np.zeros(hp.nside2npix(nside_f_est), dtype=np.float64)
 
     for i in xrange(0, nbin):
         alm_obs = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
         window_func = np.zeros(lmax, float)
         ini = int(index[i])
         if i+1 < nbin:
-            final = int(index[i+1])
+            final = int(index[i + 1])
             bin_arr[i].append(range(ini, final))
-            for j in xrange(ini, final):# Summing over all l in a given bin
+            for j in xrange(ini, final):  # Summing over all l in a given bin
                 window_func[j] = 1.0
-                alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
-                beam = 1./beam_l
-                alm_obs = hp.sphtfunc.almxfl(alm_obs, beam, mmax=None, inplace=True)
-                alm_true = alm_obs
-                filtered_map += hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
-
-            esti_map[i, :] = filtered_map
-
-    cl = hp.sphtfunc.anafast(haslam, lmax=lmax, iter=3)
-    bin_cl = []
-
-    for i in xrange(0, nbin):
-        cl_sum = 0.0
-        ini = int(index[i])
-        if i+1 < nbin:
-            final = int(index[i+1])
-            for j in xrange(ini, final):
-                cl_sum += cl[j]
-            bin_cl.append(cl_sum)
-    bin_cl = np.asarray(bin_cl)
+            alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
+            alm_obs = hp.sphtfunc.almxfl(alm_obs, 1. / beam_l, mmax=None, inplace=True)
+            alm_true = alm_obs
+            esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False) * 2.7522
 
     s1 = '/home/sandeep/final_Bispectrum/'
     s2 = 'Analysis_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
-
     with open(file_name, 'w') as f:
-        f.write("Bis\tavg_Bis\tCl1\tCl2\tCl3\ti\tj\tk\n")
+        f.write("Bis\ti\tj\tk\tcount\n")
         for i in xrange(0, nbin - 1):
-            for j in xrange(0, i + 1):
-                for k in xrange(0, j + 1):
-                    print i, j, k
-                    print np.min(bin_arr[k]) - np.max(bin_arr[j]), np.max(bin_arr[i]), np.max(bin_arr[k]) + np.max(bin_arr[j])
-                    print np.min(bin_arr[k]), np.max(bin_arr[i])
+            for j in xrange(i, nbin-1):
+                for k in xrange(j, nbin-1):
+
                     if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
                         bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
                         trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
-                        if trip_count != 0.:
-                            avgbis = bis/(1.0 * trip_count)
-                            f.write("%0.6e\t%0.6e\t%0.6e\t%0.6e\t%0.6e\t%d\t%d\t%d\n" % (
-                                    bis, avgbis, bin_cl[k], bin_cl[j], bin_cl[i], i, j, k))
+                        f.write("%0.6e\t%d\t%d\t%d\t%0.6f\n" % (bis, i, j, k, trip_count))
+
 
 if __name__ == "__main__":
 
     NSIDE = 512
 
-    #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
-    #Cell_Count1.start()
-    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
-    Cell_Count2.start()
+    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
+    Cell_Count1.start()
+    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
+    #Cell_Count2.start()
     #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
     #Cell_Count3.start()
     #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
     #Cell_Count4.start()
 
-    #Cell_Count1.join()
+    Cell_Count1.join()
     #Cell_Count2.join()
-    Cell_Count2.join()
+    #Cell_Count2.join()
     #Cell_Count4.join()
 
 

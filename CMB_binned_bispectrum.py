@@ -146,7 +146,6 @@ class map_making:
         if beam_corr:
             fwhm = beam
             beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
-        filtered_map = np.zeros(hp.nside2npix(self.nside_f_est), dtype=np.float64)
         in_map, ap_map = self.simulated_map(map_type, inp_fnl,inp_alm_l, inp_alm_nl)
 
         for i in xrange(0, nbin):
@@ -158,14 +157,13 @@ class map_making:
                 bin_arr[i].append(range(ini, final))
                 for j in xrange(ini, final):# Summing over all l in a given bin
                     window_func[j] = 1.0
-                    alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
-                    if beam_corr:
-                        beam = 1./beam_l
-                        alm_obs = hp.sphtfunc.almxfl(alm_obs, beam, mmax=None, inplace=True)
-                    alm_true = alm_obs
-                    filtered_map += hp.sphtfunc.alm2map(alm_true, self.nside_f_est, verbose=False)
-            esti_map[i, :] = filtered_map
-        #print bin_arr
+                alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
+                if beam_corr:
+                    beam = 1./beam_l
+                    alm_obs = hp.sphtfunc.almxfl(alm_obs, beam, mmax=None, inplace=True)
+                alm_true = alm_obs
+                esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, self.nside_f_est, verbose=False)
+
         return esti_map, ap_map, bin_arr
 
 
@@ -198,6 +196,7 @@ class binned_bispectrum:
         self.I = list()
         self.J = list()
         self.K = list()
+        self.trip_count = list()
 
     def bispectrum(self):
         """
@@ -208,24 +207,27 @@ class binned_bispectrum:
             for j in xrange(i, self.nbin-1):
                 for k in xrange(j, self.nbin-1):
 
-                    if np.min(self.binL[k]) - np.max(self.binL[j]) <= np.max(self.binL[i]) <= np.max(self.binL[k]) + np.max(self.binL[j]):
+                    if np.min(self.binL[k]) - np.max(self.binL[j]) <= np.max(self.binL[i]) <= np.max(self.binL[k]) \
+                              + np.max(self.binL[j]):
+
                         temp = summation(self.esti_map[i, :], self.esti_map[j, :], self.esti_map[k, :], self.ap_ma,
-                                              self.npix)
+                                         self.npix)
                         trip_count = count_triplet(np.min(self.binL[k]), np.max(self.binL[i]))
-                        if trip_count != 0.:
-                            self.avg_bis.append(temp / (1.0 * trip_count))
-                            self.bis.append(temp)
-                            self.I.append(i)
-                            self.J.append(j)
-                            self.K.append(k)
+                        self.trip_count(trip_count)
+                        self.avg_bis.append(temp / (1.0 * trip_count))
+                        self.bis.append(temp)
+                        self.I.append(i)
+                        self.J.append(j)
+                        self.K.append(k)
 
         self.bis = np.asarray(self.bis)
         self.avg_bis = np.asarray(self.avg_bis)
         self.I = np.asarray(self.I)
         self.J = np.asarray(self.J)
         self.K = np.asarray(self.K)
+        self.trip_count = np.asarray(self.trip_count)
 
-        return self.bis, self.avg_bis, self.I, self.J, self.K
+        return self.bis, self.avg_bis, self.I, self.J, self.K, self.trip_count
 
     wig.wig_temp_free()
     wig.wig_table_free()
