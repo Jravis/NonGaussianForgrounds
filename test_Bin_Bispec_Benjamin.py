@@ -4,11 +4,16 @@ we use Binned bispectrum estimator Bucher et. al. 2010 and
 arXiv:1509.08107v2,
 """
 
+
+#scheme 1 nbin-1,i+1, j+1 with if condition
+#scheme 2 nbin-1,nbin-1, nbin-1
+#scheme 3 nbin-1,i+1, i+1
+
+
 import numpy as np
 import healpy as hp
 import pywigxjpf as wig
 from numba import njit
-import matplotlib.pyplot as plt
 
 
 @njit()
@@ -66,8 +71,8 @@ wig.wig_table_init(1000)
 wig.wig_temp_init(1000)
 
 
-filename = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_l_0001_v3.fits'
-filename1 = '/home/sandeep/final_Bispectrum/fnl_test/Elsner_alm/alm_nl_0001_v3.fits'
+filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_0001_v3.fits'
+filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_0001_v3.fits'
 
 alm_1 = hp.read_alm(filename)
 alm_nl_1 = hp.read_alm(filename1)
@@ -84,8 +89,6 @@ plt.xlabel('ell'); plt.ylabel('ell(ell+1)cl'); plt.grid()
 plt.savefig("/home/sandeep/Benjamin_Test_cl.eps", dpi=100)
 plt.show()
 """
-
-
 
 nside_f_est = 1024
 
@@ -125,21 +128,19 @@ for i in xrange(0, nbin):
         for j in xrange(ini, final): # Summing over all l in a given bin
             window_func[j] = 1.0
         alm_true = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
-        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
+        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7522
 
 s1 = '/home/sandeep/final_Bispectrum/'
-s2 = 'Ben_1_Analysis_Bin_Bispectrum_%d.txt' % nside_f_est
+s2 = 'Ben_Analysis_Bin_Bispectrum_%d.txt' % nside_f_est
 file_name = s1+s2
 with open(file_name, 'w') as f:
     f.write("Bis\ti\tj\tk\tcount\n")
     for i in xrange(0, nbin - 1):
-        for j in xrange(0, nbin-1):
-            for k in xrange(0, nbin-1):
+        for j in xrange(i, nbin-1):
+            for k in xrange(j, nbin-1):
                 if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
                     bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)
                     trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
-                    #if trip_count != 0.:
-                    #    avgbis = bis/(1.0 * trip_count)
                     f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 wig.wig_temp_free()
