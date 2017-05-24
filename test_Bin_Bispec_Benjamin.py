@@ -131,17 +131,17 @@ for i in xrange(0, nbin):
         esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7522
 
 s1 = '/home/sandeep/final_Bispectrum/'
-s2 = 'Ben_Analysis_Bin_Bispectrum_%d.txt' % nside_f_est
+s2 = 'Ben_1_Analysis_Bin_Bispectrum_%d.txt' % nside_f_est
 file_name = s1+s2
 with open(file_name, 'w') as f:
     f.write("Bis\ti\tj\tk\tcount\n")
     for i in xrange(0, nbin - 1):
         for j in xrange(i, nbin-1):
             for k in xrange(j, nbin-1):
-                if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
-                    bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)
-                    trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
-                    f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
+                #if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
+                bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)
+                trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
+                f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 wig.wig_temp_free()
 wig.wig_table_free()

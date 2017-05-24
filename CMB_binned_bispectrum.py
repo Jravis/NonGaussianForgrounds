@@ -205,9 +205,9 @@ class binned_bispectrum:
         :return:
         """
         for i in xrange(0, self.nbin - 1):
-            for j in xrange(0, i + 1):
-                for k in xrange(0, j + 1):
-                   # print self.binL[k], self.binL[j], self.binL[i], self.binL[k], self.binL[j]
+            for j in xrange(i, self.nbin-1):
+                for k in xrange(j, self.nbin-1):
+
                     if np.min(self.binL[k]) - np.max(self.binL[j]) <= np.max(self.binL[i]) <= np.max(self.binL[k]) + np.max(self.binL[j]):
                         temp = summation(self.esti_map[i, :], self.esti_map[j, :], self.esti_map[k, :], self.ap_ma,
                                               self.npix)
