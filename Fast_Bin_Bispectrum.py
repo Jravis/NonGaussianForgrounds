@@ -173,18 +173,18 @@ if __name__ == "__main__":
 
     NSIDE = 512
 
-    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
-    Cell_Count1.start()
+    #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
+    #Cell_Count1.start()
     #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     #Cell_Count2.start()
-    #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
-    #Cell_Count3.start()
+    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
+    Cell_Count3.start()
     #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
     #Cell_Count4.start()
 
-    Cell_Count1.join()
+    #Cell_Count1.join()
     #Cell_Count2.join()
-    #Cell_Count2.join()
+    Cell_Count3.join()
     #Cell_Count4.join()
 
 
