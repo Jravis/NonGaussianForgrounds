@@ -170,7 +170,7 @@ class map_making:
 class binned_bispectrum:
 
     map_making.nside_f_est =512
-    map_making.masking ='No'
+    map_making.masking = 'No'
     map_making.apodization = 'No'
     wig.wig_table_init(1000)
     wig.wig_temp_init(1000)
