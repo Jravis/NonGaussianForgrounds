@@ -25,12 +25,12 @@ def code_test(nside, nmin, nmax):
         els_alm_l = hp.fitsfunc.read_alm(filename)
         els_alm_nl = hp.fitsfunc.read_alm(filename1)
         test = CB.binned_bispectrum(els_alm_l, els_alm_nl, bins, 1.0, nside)
-        bis, avg_bis, i, j, k, trip_count = test.bispectrum()
+        bis, i, j, k, trip_count = test.bispectrum()
 
         filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/900_fnl_1_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
 
-        np.savetxt(filename, zip(bis, avg_bis, i, j, k, trip_count), fmt='%0.6e,%0.6e,%d,%d,%d', delimiter=',',
-                   header='bis,avg_bis,i,j,k')
+        np.savetxt(filename, zip(bis, i, j, k, trip_count), fmt='%0.6e,%d,%d,%d,%d', delimiter=',',
+                   header='bis,i,j,k,tripcount')
 
 if __name__ == "__main__":
 

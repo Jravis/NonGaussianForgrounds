@@ -192,7 +192,6 @@ class binned_bispectrum:
         self.nbin = len(inp_bin)
         self.npix = hp.nside2npix(self.NSIDE)
         self.bis = list()
-        self.avg_bis = list()
         self.I = list()
         self.J = list()
         self.K = list()
@@ -212,22 +211,19 @@ class binned_bispectrum:
 
                         temp = summation(self.esti_map[i, :], self.esti_map[j, :], self.esti_map[k, :], self.ap_ma,
                                          self.npix)
-                        trip_count = count_triplet(np.min(self.binL[k]), np.max(self.binL[i]))
-                        self.trip_count(trip_count)
-                        self.avg_bis.append(temp / (1.0 * trip_count))
+                        self.trip_count(count_triplet(np.min(self.binL[k]), np.max(self.binL[i])))
                         self.bis.append(temp)
                         self.I.append(i)
                         self.J.append(j)
                         self.K.append(k)
 
         self.bis = np.asarray(self.bis)
-        self.avg_bis = np.asarray(self.avg_bis)
         self.I = np.asarray(self.I)
         self.J = np.asarray(self.J)
         self.K = np.asarray(self.K)
         self.trip_count = np.asarray(self.trip_count)
 
-        return self.bis, self.avg_bis, self.I, self.J, self.K, self.trip_count
+        return self.bis, self.I, self.J, self.K, self.trip_count
 
     wig.wig_temp_free()
     wig.wig_table_free()
