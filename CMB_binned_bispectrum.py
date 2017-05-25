@@ -211,7 +211,7 @@ class binned_bispectrum:
 
                         temp = summation(self.esti_map[i, :], self.esti_map[j, :], self.esti_map[k, :], self.ap_ma,
                                          self.npix)
-                        self.trip_count(count_triplet(np.min(self.binL[k]), np.max(self.binL[i])))
+                        self.trip_count.append(count_triplet(np.min(self.binL[k]), np.max(self.binL[i])))
                         self.bis.append(temp)
                         self.I.append(i)
                         self.J.append(j)
