@@ -22,12 +22,14 @@ def code_test(nside, nmin, nmax):
             filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_0%d_v3.fits' % fn
             filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_0%d_v3.fits' % fn
 
+        print filename
+        print filename1
         els_alm_l = hp.fitsfunc.read_alm(filename)
         els_alm_nl = hp.fitsfunc.read_alm(filename1)
-        test = CB.binned_bispectrum(els_alm_l, els_alm_nl, bins, 1.0, nside)
+        test = CB.binned_bispectrum(els_alm_l, els_alm_nl, bins, 100.0, nside)
         bis, i, j, k, trip_count = test.bispectrum()
 
-        filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/900_fnl_1_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
+        filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/100_fnl_100_Bispectrum/fnl_1_Bispectrum_%d.txt' % fn
 
         np.savetxt(filename, zip(bis, i, j, k, trip_count), fmt='%0.6e,%d,%d,%d,%d', delimiter=',',
                    header='bis,i,j,k,tripcount')
@@ -36,23 +38,32 @@ if __name__ == "__main__":
 
     NSIDE = 512
 
-    Cell_Count1 = Process(target=code_test, args=(NSIDE, 1, 31))
+    #Cell_Count1 = Process(target=code_test, args=(NSIDE, 1, 31))
+    Cell_Count1 = Process(target=code_test, args=(NSIDE, 900, 920))
     Cell_Count1.start()
-
-    Cell_Count2 = Process(target=code_test, args=(NSIDE, 31, 61))
+    #Cell_Count2 = Process(target=code_test, args=(NSIDE, 31, 61))
+    Cell_Count2 = Process(target=code_test, args=(NSIDE, 920, 940))
     Cell_Count2.start()
-    Cell_Count3 = Process(target=code_test, args=(NSIDE, 61, 91))
+    #Cell_Count3 = Process(target=code_test, args=(NSIDE, 61, 91))
+    Cell_Count3 = Process(target=code_test, args=(NSIDE, 940, 960))
     Cell_Count3.start()
-    Cell_Count4 = Process(target=code_test, args=(NSIDE, 91, 121))
+    #Cell_Count4 = Process(target=code_test, args=(NSIDE, 91, 121))
+    Cell_Count4 = Process(target=code_test, args=(NSIDE, 960, 980))
     Cell_Count4.start()
-    Cell_Count5 = Process(target=code_test, args=(NSIDE,  121, 151))
+    #Cell_Count5 = Process(target=code_test, args=(NSIDE,  121, 151))
+    Cell_Count5 = Process(target=code_test, args=(NSIDE,  980, 1001))
     Cell_Count5.start()
+
+    """
     Cell_Count6 = Process(target=code_test, args=(NSIDE, 151, 181))
     Cell_Count6.start()
     Cell_Count7 = Process(target=code_test, args=(NSIDE, 181, 211))
     Cell_Count7.start()
     Cell_Count8 = Process(target=code_test, args=(NSIDE, 211, 241))
     Cell_Count8.start()
+    """
+
+    """
     Cell_Count9 = Process(target=code_test, args=(NSIDE, 241, 271))
     Cell_Count9.start()
     Cell_Count10 = Process(target=code_test, args=(NSIDE, 271, 301))
@@ -94,14 +105,19 @@ if __name__ == "__main__":
     Cell_Count28 = Process(target=code_test, args=(NSIDE, 861, 900))
     Cell_Count28.start()
 
+    """
     Cell_Count1.join()
     Cell_Count2.join()
     Cell_Count3.join()
     Cell_Count4.join()
     Cell_Count5.join()
+
+    """
     Cell_Count6.join()
     Cell_Count7.join()
     Cell_Count8.join()
+    """
+    """
     Cell_Count9.join()
     Cell_Count10.join()
     Cell_Count11.join()
@@ -122,4 +138,4 @@ if __name__ == "__main__":
     Cell_Count26.join()
     Cell_Count27.join()
     Cell_Count28.join()
-
+    """
