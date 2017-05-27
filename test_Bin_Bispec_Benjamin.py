@@ -125,7 +125,7 @@ for i in xrange(0, nbin):
          #   #temp = range(ini, final)
         bin_arr[i].append(range(ini, final))
          #   final1 = final
-        for j in xrange(ini, final): # Summing over all l in a given bin
+        for j in xrange(ini, final):  # Summing over all l in a given bin
             window_func[j] = 1.0
         alm_true = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
         esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7522

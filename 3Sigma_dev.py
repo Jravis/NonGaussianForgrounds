@@ -2,6 +2,8 @@
 This is a Python code for Bispectrum on any scalar(Temprature only) map
 we use without binned for all l since my l is less than 250 bispectrum estimator Bucher et. al. 2010 and
 arXiv:1509.08107v2,
+
+To use 1000 gaussian simulation maps
 """
 
 import numpy as np
@@ -137,7 +139,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
             if i+1 < nbin:
                 final = int(index[i+1])
                 bin_arr[i].append(range(ini, final))
-                for j in xrange(ini, final): # Summing over all l in a given bin
+                for j in xrange(ini, final):  # Summing over all l in a given bin
                     window_func[j] = 1.0
 
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)

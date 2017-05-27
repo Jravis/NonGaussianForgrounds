@@ -101,9 +101,9 @@ def gaussian_maps(nmin, nmax):
     :param number:
     :return:
     """
-    np.random.seed(49390927) # fixing random Seed
-    #limit = 0.0002553 # 200
-    limit = 0.000162
+    np.random.seed(49390927)  # fixing random Seed
+    limit = 0.0002553 # 200
+    #limit = 0.000162
     npix = hp.nside2npix(NSIDE)
     print npix
     binary_mask = masking_map(Haslam_512, NSIDE, npix, limit)
@@ -111,11 +111,12 @@ def gaussian_maps(nmin, nmax):
     haslam = Haslam_512 * ap_map
 
     cl = hp.sphtfunc.anafast(haslam, lmax=250, iter=3)
-    s1 = "/home/sandeep/final_Bispectrum/NonGuassian_Maps_Elsner2009"
-    s2 = "/Gaussian_50K_test/Gaussian_Haslam_cl/haslam_50K_cl.txt"
+    s1 = "/dataspace/sandeep/Bispectrum_data"
+    s2 = "/Gaussian_200K_test/Gaussian_Haslam_cl/haslam_50K_cl.txt"
     name = s1+s2
     np.savetxt(name, cl, fmt="%0.6f")
     # creating filtered map
+
     for i in xrange(nmin, nmax):
         Map = hp.sphtfunc.synfast(cl, NSIDE, lmax=250, pol=True, pixwin=False, fwhm=0.0, sigma=None, verbose=False)
         Map = Map*ap_map
