@@ -146,7 +146,7 @@ class map_making:
         if beam_corr:
             fwhm = beam
             beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
-        in_map, ap_map = self.simulated_map(map_type, inp_fnl,inp_alm_l, inp_alm_nl)
+        in_map, ap_map = self.simulated_map(map_type, inp_fnl, inp_alm_l, inp_alm_nl)
 
         for i in xrange(0, nbin):
             alm_obs = hp.sphtfunc.map2alm(in_map, lmax=lmax, iter=3)
@@ -155,14 +155,14 @@ class map_making:
             if i+1 < nbin:
                 final = int(index[i+1])
                 bin_arr[i].append(range(ini, final))
-                for j in xrange(ini, final):# Summing over all l in a given bin
+                for j in xrange(ini, final):  # Summing over all l in a given bin
                     window_func[j] = 1.0
                 alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
                 if beam_corr:
                     beam = 1./beam_l
                     alm_obs = hp.sphtfunc.almxfl(alm_obs, beam, mmax=None, inplace=True)
                 alm_true = alm_obs
-                esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, self.nside_f_est, verbose=False)
+                esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, self.nside_f_est, verbose=False)*2.7522
 
         return esti_map, ap_map, bin_arr
 
@@ -176,7 +176,7 @@ class binned_bispectrum:
     wig.wig_temp_init(1000)
     # binned map  equation(6) casaponsa et. al.
 
-    def __init__(self, Inp_alm_l, Inp_alm_nl, inp_bin, inp_fNL, NSIDE=512, LMAX=1024):
+    def __init__(self, Inp_alm_l, Inp_alm_nl, inp_bin, inp_fNL, NSIDE=1024, LMAX=2500):
         self.Inp_alm_l = Inp_alm_l
         self.Inp_alm_nl = Inp_alm_nl
         self.inp_bin = inp_bin

@@ -16,5 +16,4 @@ for fn in array:
     map = hp.fitsfunc.read_map(filename)
     map_save = hp.mollview(map*1e-3, coord=['E', 'G'], xsize=2000, flip='astro', title=tit, cmap='hot',max=Max[count])  # gives me the attached figure.
     count += 1
-
 plt.show()
