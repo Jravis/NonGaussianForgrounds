@@ -18,25 +18,19 @@ Haslam_512 = hp.fitsfunc.read_map(name)
 lmax = 251
 NSIDE = 512
 
-wig.wig_table_init(1000)
-wig.wig_temp_init(1000)
-
 
 def masking_map(map1, nside, npix, limit):
-    """
-    This routine to apply mask that we decided using count in cell
-    scheme.
-    """
+
     mask = np.zeros(hp.nside2npix(nside), dtype=np.double)
     area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
     for ipix in xrange(0, npix):
         temp = map1[ipix]*area
-        theta, phi = hp.pixelfunc.pix2ang(nside, ipix)
         if temp < limit:
             mask[ipix] = 1.0
-        if -20. <= np.degrees(theta) <= 20:
+    for ipix in xrange(0, npix):
+        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
+        if 70. <= np.degrees(theta1) <= 110:
             mask[ipix] = 0.0
-
     return mask
 
 
@@ -48,66 +42,15 @@ def apodiz(mask):
     return apodiz_mask
 
 
-@njit()
-def count_triplet(bin_min, bin_max):
-    """
-    This routine count number of valid l-triplet in a i-trplet bin
-    which we use to evaluate average
-    :param bin_min:
-    :param bin_max:
-    :return:
-    """
-    count = 0
-    for l3 in xrange(bin_min, bin_max):
-        for l2 in xrange(bin_min, l3+1):
-            for l1 in xrange(bin_min, l2+1):
-                if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:  # we applied selection condition tirangle inequality and#parity condition
-                    count += 1
-    return count
-
-
-@njit()
-def g(l1, l2, l3):
-    """
-    :param l1:
-    :param l2:
-    :param l3:
-    :return:
-    """
-    if l1 == l2 and l2 == l3:
-        return 6.0
-    elif l1 == l2 or l2 == l3 or l3 == l1:
-        return 2.0
-    else:
-        return 1.0
-
-
-@njit()
-def summation(arr1, arr2, arr3, arr4, num_pix):
-    """
-    :param arr1:
-    :param arr2:
-    :param arr3:
-    :param arr4:
-    :param num_pix:
-    :return:
-    """
-    bi_sum = 0.0
-    for ipix in xrange(0, num_pix):
-        product = arr1[ipix]*arr2[ipix]*arr3[ipix]*arr4[ipix]
-        bi_sum += product
-    bi_sum /= (4.0*np.pi*np.sum(arr4))
-    return bi_sum
-
-
 def gaussian_maps(nmin, nmax):
     """
-    :param number:
+    :param nmin:
+    :param nmax:
     :return:
     """
     np.random.seed(49390927)  # fixing random Seed
-    limit = 0.0002553  # 200
-    #limit = 0.000162
+    #limit = 0.0002553  # 200
+    limit = 0.000162   # 50k at 2 degree apodization
     npix = hp.nside2npix(NSIDE)
     print npix
     binary_mask = masking_map(Haslam_512, NSIDE, npix, limit)
@@ -116,26 +59,24 @@ def gaussian_maps(nmin, nmax):
 
     cl = hp.sphtfunc.anafast(haslam, lmax=250, iter=3)
     s1 = "/dataspace/sandeep/Bispectrum_data"
-    s2 = "/Gaussian_200K_GalCut_test/haslam_200K_GalCut_cl.fits"
+    s2 = "/Gaussian_50K_GalCut_test/haslam_50K_GalCut_cl.txt"
     name = s1+s2
     hp.fitsfunc.write_cl(name, cl)
-
     for i in xrange(nmin, nmax):
 
         Map = hp.sphtfunc.synfast(cl, NSIDE, lmax=250, pol=True, pixwin=False, fwhm=0.0, sigma=None, verbose=False)
-        Map = Map*ap_map
+        Map *= ap_map
         Map_cl = hp.sphtfunc.anafast(Map, lmax=250, iter=3)
         s1 = "/dataspace/sandeep/Bispectrum_data"
-        s2 = "/Gaussian_200K_GalCut_test/Gaussian_200K_GalCut_cl/haslam_200KgaussMap_cl_%d.fits" % i
+        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_cl/haslam_50KgaussMap_cl_%d.fits" % i
         filename = s1+s2
         hp.fitsfunc.write_cl(filename, Map_cl)
-
         s1 = "/dataspace/sandeep/Bispectrum_data"
-        s2 = "/Gaussian_200K_GalCut_test/Gaussian_200K_GalCut_cl/haslam_200KgaussMap_%d.fits" % i
+        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Maps/haslam_50KgaussMap_%d.fits" % i
         filename = s1+s2
         hp.fitsfunc.write_map(filename, Map)
 
-"""
+
 if __name__ == "__main__":
 
     Cell_Count1 = Process(target=gaussian_maps, args=(0, 101))
@@ -169,40 +110,38 @@ if __name__ == "__main__":
     Cell_Count8.join()
     Cell_Count9.join()
     Cell_Count10.join()
-"""
-
-
-esti_cl = np.zeros((1000, lmax), dtype=np.float32)
-s1 = "/dataspace/sandeep/Bispectrum_data"
-s2 = "/Gaussian_200K_GalCut_test/haslam_200K_GalCut_cl.fits"
-name = s1+s2
-cl = hp.fitsfunc.read_cl(name)
-
-for i in xrange(0, 1000):
+    """
+    esti_cl = np.zeros((1000, lmax), dtype=np.float32)
     s1 = "/dataspace/sandeep/Bispectrum_data"
-    s2 = "/Gaussian_200K_GalCut_test/Gaussian_200K_GalCut_cl/haslam_200KgaussMap_cl_%d.fits" % i
-    filename = s1+s2
-    Map_cl = hp.fitsfunc.read_cl(name)
-    esti_cl[i, :] = Map_cl
+    s2 = "/Gaussian_50K_GalCut_test/haslam_50K_GalCut_cl.txt"
+    name = s1+s2
+    cl = hp.fitsfunc.read_cl(name)
 
-mean = np.mean(esti_cl, 0)
-std_dev = np.std(esti_cl, 0)
+    for i in xrange(0, 1000):
+        s1 = "/dataspace/sandeep/Bispectrum_data"
+        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_cl/haslam_50KgaussMap_cl_%d.fits" % i
+        filename = s1+s2
+        Map_cl = hp.fitsfunc.read_cl(name)
+        esti_cl[i, :] = Map_cl
 
-print std_dev
-l = np.arange(lmax)
-plt.figure(1, figsize=(7, 7))
+    mean = np.mean(esti_cl, 0)
+    std_dev = np.std(esti_cl, 0)
 
-plt.fill_between(l, l*(l+1)*(mean-std_dev), l*(l+1)*(mean+std_dev), alpha=0.5, edgecolor='c', facecolor='paleturquoise')
-plt.plot(l, l*(l+1)*mean, 'd-', color='crimson', linewidth=2, label='mean Cl')
-plt.plot(l, l*(l+1)*cl, '-.', color='orange', linewidth=2, label='original Cl')
-plt.yscale("log")
-plt.xscale("log")
-plt.grid(which='both')
-plt.legend()
-plt.xlabel(r'$l$', fontsize='x-large', fontstyle='italic', weight='extra bold')
-plt.ylabel(r'$l(l+1)C_{l}$', fontsize='x-large', fontstyle='italic', weight='extra bold')
-plt.minorticks_on()
-plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=14)
-plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
-plt.savefig("/dataspace/sandeep/Bispectrum_data//Gaussian_200K_GalCut_test/1000Gaussian_Cl_200K_GalCut.eps", dpi=100)
-plt.show()
+    l = np.arange(lmax)
+    plt.figure(1, figsize=(7, 7))
+
+    plt.fill_between(l, l*(l+1)*(mean-std_dev), l*(l+1)*(mean+std_dev), alpha=0.5, edgecolor='c', facecolor='paleturquoise')
+    plt.plot(l, l*(l+1)*mean, 'd-', color='crimson', linewidth=2, label='mean Cl')
+    plt.plot(l, l*(l+1)*cl, '-.', color='orange', linewidth=2, label='original Cl')
+    plt.yscale("log")
+    plt.xscale("log")
+    plt.grid(which='both')
+    plt.legend()
+    plt.xlabel(r'$l$', fontsize='x-large', fontstyle='italic', weight='extra bold')
+    plt.ylabel(r'$l(l+1)C_{l}$', fontsize='x-large', fontstyle='italic', weight='extra bold')
+    plt.minorticks_on()
+    plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=14)
+    plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
+    plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/1000Gaussian_Cl_50K_GalCut.eps", dpi=100)
+    plt.show()
+    """
