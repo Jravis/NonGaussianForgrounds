@@ -30,13 +30,11 @@ def masking_map(map1, nside, npix, limit):
         if temp < limit:
             mask[ipix] = 1.0
 
-    # for ipix in xrange(0, npix):
-    #    theta, phi = hp.pixelfunc.pix2ang(nside, ipix)
-    #    if -20. <= np.degrees(theta) <= 20:
-     #       mask[ipix] = 0.0
-
+    for ipix in xrange(0, npix):
+        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
+        if 70. <= np.degrees(theta1) <= 110:
+            mask[ipix] = 0.0
     return mask
-
 
 def apodiz(mask):
     width = m.radians(2.0)
@@ -152,8 +150,8 @@ def bispec_estimator(nside_f_est, loop, limit):
             alm_true = alm_obs
             esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    s1 = '/home/sandeep/final_Bispectrum/'
-    s2 = 'Analysis_Bin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/'
+    s2 = 'Analysis_50KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
 
     with open(file_name, 'w') as f:
@@ -175,16 +173,16 @@ if __name__ == "__main__":
 
     #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
     #Cell_Count1.start()
-    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
-    #Cell_Count2.start()
-    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
-    Cell_Count3.start()
+    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
+    Cell_Count2.start()
+    #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
+    #Cell_Count3.start()
     #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
     #Cell_Count4.start()
 
     #Cell_Count1.join()
-    #Cell_Count2.join()
-    Cell_Count3.join()
+    Cell_Count2.join()
+    #Cell_Count3.join()
     #Cell_Count4.join()
 
 

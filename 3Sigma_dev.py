@@ -32,8 +32,11 @@ def masking_map(map1, nside, npix, limit):
         temp = map1[ipix]*area
         if temp < limit:
             mask[ipix] = 1.0
+    for ipix in xrange(0, npix):
+        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
+        if 70. <= np.degrees(theta1) <= 110:
+            mask[ipix] = 0.0
     return mask
-
 
 def apodiz(mask):
     width = m.radians(2.0)
@@ -111,7 +114,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
     for fn in xrange(nmin, nmax):
         
         s1 = '/dataspace/sandeep/Bispectrum_data'
-        s2 = '/Gaussian_200K_test/Gaussian_Haslam_Maps/haslam_gaussMap_%d.fits' % fn
+        s2 = '/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Maps/haslam_50KgaussMap_%d.fits' % fn
         filename = s1+s2
         haslam = hp.fitsfunc.read_map(filename)
         lmax = 251
@@ -147,7 +150,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                 alm_true = alm_obs
                 esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bispectrum/'
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Bispectrum'
         s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
 
@@ -167,7 +170,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
 if __name__ == "__main__":
 
     NSIDE = 512
-    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
+    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 101))
 
     Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 101))
