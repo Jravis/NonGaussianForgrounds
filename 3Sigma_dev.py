@@ -20,7 +20,6 @@ Haslam_512 = hp.fitsfunc.read_map(name)
 wig.wig_table_init(1000)
 wig.wig_temp_init(1000)
 
-
 def masking_map(map1, nside, npix, limit):
     """
     This routine to apply mask that we decided using count in cell
@@ -32,10 +31,13 @@ def masking_map(map1, nside, npix, limit):
         temp = map1[ipix]*area
         if temp < limit:
             mask[ipix] = 1.0
+    """
     for ipix in xrange(0, npix):
         theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
         if 70. <= np.degrees(theta1) <= 110:
             mask[ipix] = 0.0
+    """
+
     return mask
 
 def apodiz(mask):
@@ -79,7 +81,6 @@ def g(l1, l2, l3):
     else:
         return 1.0
 
-
 @njit()
 def summation(arr1, arr2, arr3, arr4, num_pix):
     """
@@ -112,7 +113,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
     ap_map = apodiz(binary_mask)
 
     for fn in xrange(nmin, nmax):
-        
+
         s1 = '/dataspace/sandeep/Bispectrum_data'
         s2 = '/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Maps/haslam_50KgaussMap_%d.fits' % fn
         filename = s1+s2
@@ -150,7 +151,7 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                 alm_true = alm_obs
                 esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Bispectrum'
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/'
         s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
 
@@ -167,31 +168,81 @@ def bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
                             f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
+def unbin_bispec_estimator(nside_f_est, loop, limit, nmin, nmax):
+    """
+    :param nside_f_est:
+    :param loop:
+    :param limit:
+    :return:
+    """
+    npix = hp.nside2npix(nside_f_est)
+    print npix
+
+    binary_mask = masking_map(Haslam_512, nside_f_est, npix, limit)
+    ap_map = apodiz(binary_mask)
+    lmax = 251
+    nbin = range(2, 251)
+
+    for fn in xrange(nmin, nmax):
+        s1 = '/dataspace/sandeep/Bispectrum_data'
+        s2 = '/Gaussian_200K_test/Gaussian_Haslam_Maps/haslam_gaussMap_%d.fits' % fn
+        filename = s1+s2
+        haslam = hp.fitsfunc.read_map(filename)
+        esti_map = np.zeros((len(nbin), npix), dtype=np.double)
+        fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
+        beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
+
+        for i in xrange(0, len(nbin)):
+            alm_obs = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
+            window_func = np.zeros(lmax, float)
+            window_func[nbin[i]] = 1.0
+            alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
+            alm_obs = hp.sphtfunc.almxfl(alm_obs, 1./beam_l, mmax=None, inplace=True)
+            alm_true = alm_obs
+            esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
+
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bispectrum/'
+        s2 = 'Bispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
+        file_name = s1+s2
+
+        with open(file_name, 'w') as f:
+            f.write("Bis\ti\tj\tk\tcount\n")
+            for i in xrange(0, len(nbin)-1):
+                for j in xrange(i, len(nbin)-1):
+                    for k in xrange(j, len(nbin)-1):
+                        if abs(nbin[j]-nbin[k]) <= nbin[i] <= nbin[j]+nbin[k] and (nbin[i]+nbin[j]+nbin[k]) % 2 == 0:
+                            bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
+                            f.write("%0.6e\t%d\t%d\t%d\n" % (bis, nbin[i], nbin[j], nbin[k]))
+
+
 if __name__ == "__main__":
 
     NSIDE = 512
-    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
+    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 101))
 
-    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 0, 101))
+    LIMIT = 0.0002553
+    TEMP = 200
+
+    Cell_Count1 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 0, 101))
     Cell_Count1.start()
-    Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 101, 201))
+    Cell_Count2 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 101, 201))
     Cell_Count2.start()
-    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 201, 301))
+    Cell_Count3 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 201, 301))
     Cell_Count3.start()
-    Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 301, 401))
+    Cell_Count4 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 301, 401))
     Cell_Count4.start()
-    Cell_Count5 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 401, 501))
+    Cell_Count5 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 401, 501))
     Cell_Count5.start()
-    Cell_Count6 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 501, 601))
+    Cell_Count6 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 501, 601))
     Cell_Count6.start()
-    Cell_Count7 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 601, 701))
+    Cell_Count7 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 601, 701))
     Cell_Count7.start()
-    Cell_Count8 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 701, 801))
+    Cell_Count8 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 701, 801))
     Cell_Count8.start()
-    Cell_Count9 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 801, 901))
+    Cell_Count9 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 801, 901))
     Cell_Count9.start()
-    Cell_Count10 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553, 901, 1001))
+    Cell_Count10 = Process(target=unbin_bispec_estimator, args=(NSIDE, TEMP, LIMIT, 901, 1001))
     Cell_Count10.start()
 
     Cell_Count1.join()

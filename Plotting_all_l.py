@@ -6,8 +6,8 @@ import matplotlib.gridspec as gridspec
 
 lmax = 250
 
-s1 = "/dataspace/sandeep/Bispectrum_data"
-s2 = "/Analysis_Bin_Bispectrum_512_200.txt"
+s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/'
+s2 = 'Analysis_50KBin_Bispectrum_512_50.txt'
 name = s1+s2
 data = ascii.read(name, guess=False, delimiter='\t')
 Bis = data['Bis']
@@ -29,7 +29,7 @@ for ii in xrange(len(Bis)):
     #else:
      #   Bis_even.append(Bis[ii])
 
-    if j[ii] == k[ii]==i[ii]:
+    if j[ii] == k[ii] == i[ii]:
         Bis_1.append(Bis[ii])
         l3.append(i[ii])
 
@@ -41,8 +41,8 @@ esti_bis_1 = np.zeros((1000, len(Bis2)), dtype=np.float64)
 
 for i in xrange(0, 1000):
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bispectrum'
-    s2 = '/BinnedBispectrum_GaussianMaps_512_200k_%d.txt' % i
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Bispectrum/'
+    s2 = 'BinnedBispectrum_GaussianMaps_512_50k_%d.txt' % i
     name = s1+s2
     data = ascii.read(name, guess=False, delimiter='\t')
     Gauss_Bis = data['Bis']
@@ -189,7 +189,9 @@ ax9.set_title(r'$l_{3}\in [67, 103], l_{3}=I_{9}$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
-plt.savefig("/dataspace/sandeep/Bispectrum_data/plots/200_2d_Binnedplots_data-mean_stdDev_1.eps", dpi=100)
+#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/"
+#            "50K_2d_Binnedplots_data-mean_stdDev_1.eps", dpi=100)
+
 
 
 plt.figure(2, figsize=(8, 6))
@@ -209,7 +211,8 @@ ax11.set_title(r'$l_{3}\in [161, 249], l_{3}=I_{11}$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
-plt.savefig("/dataspace/sandeep/Bispectrum_data/plots/200_2d_Binnedplots_data-mean_stdDev_2.eps", dpi=100)
+#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/"
+#            "50K_2d_Binnedplots_data-mean_stdDev_2.eps", dpi=100)
 
 
 plt.figure(3, figsize=(8, 6))
@@ -217,14 +220,15 @@ plt.plot(l3, Bis2, 'b-', linewidth=2, label='data')
 plt.plot(l3, mean1, '-', color='orange', linewidth=2, label='mean')
 plt.fill_between(l3, (mean1 - std_dev1),  (mean1 + std_dev1), alpha=0.5, edgecolor='c',
                  facecolor='paleturquoise')
-plt.xscale('log')
+#plt.xscale('log')
 #plt.yscale('log')
+plt.xlim(3, 10)
 plt.legend()
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
 plt.xlabel(r"$l$", fontsize=18)
 plt.ylabel(r"$B_{lll}$", fontsize=18)
-plt.savefig("/dataspace/sandeep/Bispectrum_data/plots/Bispectrum_lll.eps", dpi=100)
+#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/Bispectrum_lll_1.eps', dpi=100)
 plt.show()
 

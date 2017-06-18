@@ -4,34 +4,27 @@ we use Binned bispectrum estimator Bucher et. al. 2010 and
 arXiv:1509.08107v2,
 """
 
-
-#scheme 1 nbin-1,i+1, j+1 with if condition
-#scheme 2 nbin-1,nbin-1, nbin-1
-#scheme 3 nbin-1,i+1, i+1
-
-
 import numpy as np
 import healpy as hp
-import pywigxjpf as wig
 from numba import njit
 
 
-@njit()
-def count_triplet(bin_min, bin_max):
-    """
+#@njit()
+def count_triplet(bin_1, bin_2, bin_3):
+   """
     This routine count number of valid l-triplet in a i-trplet bin
     which we use to evaluate average
     :param bin_min:
     :param bin_max:
     :return:
-    """
-    count = 0
-    for l3 in xrange(bin_min, bin_max):
-        for l2 in xrange(bin_min, l3+1):
-            for l1 in xrange(bin_min, l2+1):
-                if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:  # we applied selection condition tirangle inequality and#parity condition
-                    count += 1
-    return count
+   """
+   count = 0
+   for l3 in xrange(bin_1[0], bin_1[1]+1):
+      for l2 in xrange(bin_2[0], bin_2[1]+1):
+         for l1 in xrange(bin_3[0], bin_3[1]+1):
+            if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:
+               count += 1
+   return count
 
 
 @njit()
@@ -67,9 +60,6 @@ def summation(arr1, arr2, arr3,  num_pix):
     bi_sum /= (4.0*np.pi*num_pix)
     return bi_sum
 
-wig.wig_table_init(1000)
-wig.wig_temp_init(1000)
-
 
 filename = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_l_0001_v3.fits'
 filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_0001_v3.fits'
@@ -79,6 +69,7 @@ alm_nl_1 = hp.read_alm(filename1)
 map_20 = hp.alm2map((alm_1 + 20 * alm_nl_1), 1024)
 
 lmax = 2500
+
 """
 cl = hp.anafast(map_20, lmax=lmax)
 ell = np.arange(len(cl))
@@ -107,7 +98,7 @@ print ""
 print index
 # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
 
-bin_arr = [[] for i in range(nbin-1)]
+bin_arr = np.zeros((nbin-1, 2), dtype=int)
 esti_map = np.zeros((nbin, npix), dtype=np.double)
 filtered_map = np.zeros(hp.nside2npix(nside_f_est), dtype=np.float64)
 
@@ -117,20 +108,16 @@ for i in xrange(0, nbin):
     ini = index[i]
     if i+1 < nbin:
         final = index[i+1]
-        #if final == 2500:
-            #temp = range(ini, final+1)
-        #    bin_arr[i].append(range(ini, final+1))
-        #    final1 = final+1
-        #else:
-         #   #temp = range(ini, final)
-        bin_arr[i].append(range(ini, final))
-         #   final1 = final
+        bin_arr[i, 0] = ini
+        bin_arr[i, 1] = final
         for j in xrange(ini, final):  # Summing over all l in a given bin
             window_func[j] = 1.0
         alm_true = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
         esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7522
 
-s1 = '/home/sandeep/final_Bispectrum/'
+print bin_arr
+
+s1 = '/home/sandeep/Benjamin_test/'
 s2 = 'Ben_1_Analysis_Bin_Bispectrum_%d.txt' % nside_f_est
 file_name = s1+s2
 with open(file_name, 'w') as f:
@@ -140,15 +127,8 @@ with open(file_name, 'w') as f:
             for k in xrange(j, nbin-1):
                 #if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) + np.max(bin_arr[j]):
                 bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)
-                trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
+                trip_count = count_triplet(bin_arr[i,:], bin_arr[j,:], bin_arr[k,:])
                 f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
-wig.wig_temp_free()
-wig.wig_table_free()
 
-
-#if min(temp) == max(temp):
-#print i, [max(temp)]
-#else:
-#print i, [min(temp), max(temp)]
 
