@@ -14,9 +14,6 @@ name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
 
-wig.wig_table_init(1000)
-wig.wig_temp_init(1000)
-
 
 def masking_map(map1, nside, npix, limit):
     """
@@ -29,6 +26,7 @@ def masking_map(map1, nside, npix, limit):
         temp = map1[ipix]*area
         if temp < limit:
             mask[ipix] = 1.0
+
     """
     for ipix in xrange(0, npix):
         theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
@@ -36,6 +34,7 @@ def masking_map(map1, nside, npix, limit):
             mask[ipix] = 0.0
     """
     return mask
+
 
 def apodiz(mask):
     width = m.radians(2.0)
@@ -46,7 +45,7 @@ def apodiz(mask):
 
 
 @njit()
-def count_triplet(bin_min, bin_max):
+def count_triplet(bin_1, bin_2, bin_3):
     """
     This routine count number of valid l-triplet in a i-trplet bin
     which we use to evaluate average
@@ -55,13 +54,12 @@ def count_triplet(bin_min, bin_max):
     :return:
     """
     count = 0
-    for l3 in xrange(bin_min, bin_max):
-        for l2 in xrange(bin_min, l3+1):
-            for l1 in xrange(bin_min, l2+1):
-                if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:  # we applied selection condition tirangle inequality and#parity condition
+    for l3 in xrange(bin_1[0], bin_1[1]+1):
+        for l2 in xrange(bin_2[0], bin_2[1]+1):
+            for l1 in xrange(bin_3[0], bin_3[1]+1):
+                if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:
                     count += 1
     return count
-
 
 @njit()
 def g(l1, l2, l3):
@@ -114,9 +112,6 @@ def bispec_estimator(nside_f_est, loop, limit):
     ap_map = apodiz(binary_mask)
     haslam = Haslam_512 * ap_map
 
-
-# binned map  equation(6) casaponsa et. al.
-
     lmax = 250
     nbin = 12
 
@@ -131,11 +126,10 @@ def bispec_estimator(nside_f_est, loop, limit):
 
     # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
 
-    bin_arr = [[] for i in range(12)]
-
     esti_map = np.zeros((nbin, npix), dtype=np.double)
-    fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
+    fwhm = 56./60.  # For Haslam FWHM is 56 arc min
     beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
+    bin_arr = np.zeros((nbin - 1, 2), dtype=int)
 
     for i in xrange(0, nbin):
         alm_obs = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
@@ -143,7 +137,10 @@ def bispec_estimator(nside_f_est, loop, limit):
         ini = int(index[i])
         if i+1 < nbin:
             final = int(index[i + 1])
-            bin_arr[i].append(range(ini, final))
+            bin_arr[i, 0] = ini
+
+            bin_arr[i, 1] = final - 1
+
             for j in xrange(ini, final):  # Summing over all l in a given bin
                 window_func[j] = 1.0
             alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
@@ -151,23 +148,21 @@ def bispec_estimator(nside_f_est, loop, limit):
             alm_true = alm_obs
             esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_GalCut_test/'
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/'
     s2 = 'Analysis_200KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
-
+    print file_name
     with open(file_name, 'w') as f:
         f.write("Bis\ti\tj\tk\tcount\n")
         for i in xrange(0, nbin - 1):
             for j in xrange(i, nbin-1):
                 for k in xrange(j, nbin-1):
-
-                    if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <= np.max(bin_arr[k]) \
-                            + np.max(bin_arr[j]):
-                        bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                        trip_count = count_triplet(np.min(bin_arr[k]), np.max(bin_arr[i]))
-                        f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
+                    bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
+                    trip_count = count_triplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
+                    f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
+@njit()
 def unbin_bispec_estimator(nside_f_est, loop, limit):
     """
     :param nside_f_est:
@@ -220,7 +215,7 @@ if __name__ == "__main__":
     #Cell_Count1.start()
     #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     #Cell_Count2.start()
-    Cell_Count3 = Process(target=unbin_bispec_estimator, args=(NSIDE, 200, 0.0002553))
+    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
     Cell_Count3.start()
     #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
     #Cell_Count4.start()

@@ -6,8 +6,12 @@ import matplotlib.gridspec as gridspec
 
 lmax = 250
 
-s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/'
-s2 = 'Analysis_50KBin_Bispectrum_512_50.txt'
+s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/'
+s2 = 'Analysis_200KBin_Bispectrum_512_200.txt'
+
+#s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/'
+#s2 = 'Analysis_50KBin_Bispectrum_512_50.txt'
+
 name = s1+s2
 data = ascii.read(name, guess=False, delimiter='\t')
 Bis = data['Bis']
@@ -15,57 +19,67 @@ Bis = data['Bis']
 i = data['i']
 j = data['j']
 k = data['k']
+count = data['count']
 Bis_even = []
 Bis_1 = []
 l3 = []
-
+I3 = []
+I2 = []
+I1 = []
 
 for ii in xrange(len(Bis)):
-    #if i[ii] == 0 or i[ii] == 1:
-    #    if j[ii] == 0 or j[ii] == 1:
-    #        if k[ii] == 0 or k[ii] == 1:
-    #            if (i[ii]+j[ii]+k[ii]) % 2 == 0:
-    Bis_even.append(Bis[ii])
-    #else:
-     #   Bis_even.append(Bis[ii])
+    if count[ii] != 0:
+        Bis_even.append(Bis[ii])
+        I3.append(i[ii])
+        I2.append(j[ii])
+        I1.append(k[ii])
 
-    if j[ii] == k[ii] == i[ii]:
-        Bis_1.append(Bis[ii])
-        l3.append(i[ii])
+        if j[ii] == k[ii] == i[ii]:
+            Bis_1.append(Bis[ii])
+            l3.append(i[ii])
 
 Bis1 = np.asarray(Bis_even)
-print len(l3), len(Bis1)
 Bis2 = np.asarray(Bis_1)
-esti_bis = np.zeros((1000, len(Bis)), dtype=np.float64)
+I3 = np.asarray(I3)
+I2 = np.asarray(I2)
+I1 = np.asarray(I1)
+
+l3 = np.asarray(l3)
+
+print len(l3), len(Bis1), len(Bis2)
+
+esti_bis = np.zeros((1000, len(Bis1)), dtype=np.float64)
 esti_bis_1 = np.zeros((1000, len(Bis2)), dtype=np.float64)
 
-for i in xrange(0, 1000):
+for ii in xrange(0, 1000):
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Bispectrum/'
-    s2 = 'BinnedBispectrum_GaussianMaps_512_50k_%d.txt' % i
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bin_Bispectrum/'
+    s2 = 'BinnedBispectrum_GaussianMaps_512_200k_%d.txt' % ii
+
+    #s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/Gaussian_50K_Bin_Bispectrum/'
+    #s2 = 'BinnedBispectrum_GaussianMaps_512_50k_%d.txt' % ii
+
     name = s1+s2
     data = ascii.read(name, guess=False, delimiter='\t')
     Gauss_Bis = data['Bis']
     I = data['i']
     J = data['j']
     K = data['k']
+    count = data['count']
     Bis_even = []
     Bis_1 = []
-    for nn in xrange(len(Bis)):
-      #  if I[nn] == 0 or I[nn] == 1:
-      #      if J[nn] == 0 or J[nn] == 1:
-      #          if K[nn] == 0 or K[nn] == 1:
-      #              if (I[nn]+J[nn]+K[nn]) % 2 == 0:
-        Bis_even.append(Gauss_Bis[nn])
-       # else:
-       #     Bis_even.append(Gauss_Bis[nn])
-        if J[nn] == K[nn] == I[nn]:
-            Bis_1.append(Gauss_Bis[nn])
+    for nn in xrange(len(Gauss_Bis)):
+        if count[nn] != 0:
+            Bis_even.append(Gauss_Bis[nn])
+            if J[nn] == K[nn] == I[nn]:
+                Bis_1.append(Gauss_Bis[nn])
 
     Gauss_Bis = np.asarray(Bis_even, dtype=np.float64)
     Gauss_Bis1 = np.asarray(Bis_1, dtype=np.float64)
-    esti_bis[i, :] = Gauss_Bis
-    esti_bis_1[i, :] = Gauss_Bis1
+
+    esti_bis[ii, :] = Gauss_Bis
+    esti_bis_1[ii, :] = Gauss_Bis1
+
 
 mean = np.mean(esti_bis, 0, dtype=np.float64)
 std_dev = np.std(esti_bis, 0, dtype=np.float64)
@@ -73,49 +87,20 @@ std_dev = np.std(esti_bis, 0, dtype=np.float64)
 mean1 = np.mean(esti_bis_1, 0, dtype=np.float64)
 std_dev1 = np.std(esti_bis_1, 0, dtype=np.float64)
 
-"""
-test = np.sum(esti_bis_1, 0, dtype=np.float64)
-test /= 1000.
-
-y = np.zeros((1000, len(Bis2)), dtype=np.float64)
-for i in xrange(0,1000):
-    y[i, :] = np.square(np.subtract(esti_bis_1[i,:], test))
-
-test_std = np.sum(y, 0, dtype=np.float64)
-test_std /= 1000.
-test_std = np.sqrt(test_std)
-
-print std_dev1
-print test_std
-"""
-
-
+print Bis2
+print mean1
 
 nbin = 12
 x = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)
 
-bin_arr = [[] for i in range(12)]
-bins = []
-for i in xrange(0, nbin):
-    ini = int(x[i])
-    if i + 1 < nbin:
-        final = int(x[i + 1])
-        bin_arr[i].append(range(ini, final))
-        if ini == final-1:
-            bins.append([ini])
-        else:
-            bins.append([ini, final-1])
-print bins
-
-
-def plot_data(count):
-    data = np.zeros((len(x), len(x)), dtype=np.float32)
-    for i in xrange(len(I)):
-        if I[i] == count:
-            index, index1 = J[i], K[i]
-#           print index1, index, Bis1[i]
-            data[index, index1] = (Bis1[i]-mean[i])/std_dev[i]
+def plot_data(count1):
+    data = np.zeros((nbin-1, nbin-1), dtype=np.float64)
+    for ii in xrange(len(I3)):
+        if I3[ii] == count1:
+            index, index1 = I2[ii], I1[ii]
+            data[index, index1] = (Bis1[ii]-mean[ii])/std_dev[ii]
     return data
+
 
 fig = plt.figure(1, figsize=(9, 8))
 
@@ -126,7 +111,6 @@ ax1.set_xlabel(r'$l_{1}$', fontsize=14)
 ax1.set_ylabel(r'$l_{2}$', fontsize=14)
 ax1.set_title(r'$l_{3}\in [2], l_{3}=I_{1}$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
-
 ax2 = plt.subplot(gs[0, 1])
 im = ax2.imshow(plot_data(1), cmap='RdBu', origin='lower', interpolation='nearest')
 ax2.set_xlabel(r'$l_{1}$', fontsize=14)
@@ -189,9 +173,8 @@ ax9.set_title(r'$l_{3}\in [67, 103], l_{3}=I_{9}$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/"
-#            "50K_2d_Binnedplots_data-mean_stdDev_1.eps", dpi=100)
-
+plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/plots/"
+            "50K_2d_Binnedplots_data-mean_stdDev_1.eps", dpi=100)
 
 
 plt.figure(2, figsize=(8, 6))
@@ -211,8 +194,8 @@ ax11.set_title(r'$l_{3}\in [161, 249], l_{3}=I_{11}$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout() # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/"
-#            "50K_2d_Binnedplots_data-mean_stdDev_2.eps", dpi=100)
+plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/plots/"
+            "50K_2d_Binnedplots_data-mean_stdDev_2.eps", dpi=100)
 
 
 plt.figure(3, figsize=(8, 6))
@@ -222,13 +205,14 @@ plt.fill_between(l3, (mean1 - std_dev1),  (mean1 + std_dev1), alpha=0.5, edgecol
                  facecolor='paleturquoise')
 #plt.xscale('log')
 #plt.yscale('log')
-plt.xlim(3, 10)
+#plt.xlim(3, 10)
 plt.legend()
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
 plt.xlabel(r"$l$", fontsize=18)
 plt.ylabel(r"$B_{lll}$", fontsize=18)
-#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/plots/Bispectrum_lll_1.eps', dpi=100)
+#plt.xlim(6,)
+#plt.yscale('symlog', linthreshy=0.001)
+plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/plots/Bispectrum_lll_1.eps', dpi=100)
 plt.show()
-

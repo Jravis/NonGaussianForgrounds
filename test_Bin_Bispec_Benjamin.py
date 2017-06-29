@@ -68,7 +68,7 @@ filename1 = '/dataspace/sandeep/Bispectrum_data/fnl_test/Elsner_alm/alm_nl_0001_
 
 alm_1 = hp.read_alm(filename)
 alm_nl_1 = hp.read_alm(filename1)
-map_20 = hp.alm2map((alm_1 + 20 * alm_nl_1), 1024)
+map_20 = hp.alm2map((alm_1 + 20 * alm_nl_1)*2.7255, 1024)
 
 lmax = 2500
 
@@ -118,7 +118,7 @@ for i in xrange(0, nbin):
 
         bin_arr[i, 0] = ini
 
-        bin_arr[i, 1] = final
+        bin_arr[i, 1] = final-1
 
         for j in xrange(ini, final):  # Summing over all l in a given bin
 
@@ -126,7 +126,7 @@ for i in xrange(0, nbin):
 
         alm_true = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
 
-        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
+        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7255
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Bispectrum Analysis
@@ -140,7 +140,7 @@ with open(file_name, 'w') as f:
         for j in xrange(i, nbin-1):
             for k in xrange(j, nbin-1):
 
-                # if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <=
+                #if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <=
                 # np.max(bin_arr[k]) + np.max(bin_arr[j]):
 
                 bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)

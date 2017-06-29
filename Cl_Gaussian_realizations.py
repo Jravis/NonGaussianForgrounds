@@ -27,10 +27,12 @@ def masking_map(map1, nside, npix, limit):
         temp = map1[ipix]*area
         if temp < limit:
             mask[ipix] = 1.0
-#    for ipix in xrange(0, npix):
+    """
+    for ipix in xrange(0, npix):
         theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
-#        if 70. <= np.degrees(theta1) <= 110:
-#            mask[ipix] = 0.0
+        if 70. <= np.degrees(theta1) <= 110:
+            mask[ipix] = 0.0
+    """
     return mask
 
 
@@ -50,8 +52,8 @@ def gaussian_maps(nmin, nmax):
     """
 
     np.random.seed(49390927)  # fixing random Seed
-    #limit = 0.0002553  # 200
-    limit = 0.000162   # 50k at 2 degree apodization
+    limit = 0.0002553  # 200
+    #limit = 0.000162   # 50k at 2 degree apodization
     npix = hp.nside2npix(NSIDE)
     print npix
     binary_mask = masking_map(Haslam_512, NSIDE, npix, limit)
@@ -60,7 +62,7 @@ def gaussian_maps(nmin, nmax):
 
     cl = hp.sphtfunc.anafast(haslam, lmax=250, iter=3)
     s1 = "/dataspace/sandeep/Bispectrum_data"
-    s2 = "/Gaussian_50K_GalCut_test/haslam_50K_GalCut_cl.txt"
+    s2 = "/Gaussian_200K_test/haslam_200K_cl.txt"
     name = s1+s2
     np.savetxt(name, cl, fmt='%0.6f')
 
@@ -69,11 +71,11 @@ def gaussian_maps(nmin, nmax):
         Map1 = Map*ap_map
         Map_cl = hp.sphtfunc.anafast(Map1, lmax=250, iter=3)
         s1 = "/dataspace/sandeep/Bispectrum_data"
-        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_cl/haslam_50KgaussMap_cl_%d.txt" % i
+        s2 = "/Gaussian_200K_test/Gaussian_200K_cl/haslam_200KgaussMap_cl_%d.txt" % i
         filename = s1+s2
         np.savetxt(filename, Map_cl, fmt='%0.6f')
         s1 = "/dataspace/sandeep/Bispectrum_data"
-        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_Maps/haslam_50KgaussMap_%d.fits" % i
+        s2 = "/Gaussian_200K_test/Gaussian_200K_Maps/haslam_200KgaussMap_%d.fits" % i
         filename = s1+s2
         hp.fitsfunc.write_map(filename, Map)
 
@@ -113,13 +115,13 @@ if __name__ == "__main__":
 
     esti_cl = np.zeros((100, lmax), dtype=np.float32)
     s1 = "/dataspace/sandeep/Bispectrum_data"
-    s2 = "/Gaussian_50K_GalCut_test/haslam_50K_GalCut_cl.txt"
+    s2 = "/Gaussian_200K_test/haslam_200K_cl.txt"
     name = s1+s2
     cl = np.genfromtxt(name)
 
     for i in xrange(0, 100):
         s1 = "/dataspace/sandeep/Bispectrum_data"
-        s2 = "/Gaussian_50K_GalCut_test/Gaussian_50K_GalCut_cl/haslam_50KgaussMap_cl_%d.txt" % i
+        s2 = "/Gaussian_200K_test/Gaussian_200K_cl/haslam_200KgaussMap_cl_%d.txt" % i
         filename = s1+s2
         Map_cl = np.genfromtxt(filename)
         esti_cl[i, :] = Map_cl
@@ -142,5 +144,5 @@ if __name__ == "__main__":
     plt.minorticks_on()
     plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=14)
     plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
-    plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_GalCut_test/1000Gaussian_Cl_50K_GalCut.eps", dpi=100)
+    plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/1000Gaussian_Cl_200K.eps", dpi=100)
 plt.show()
