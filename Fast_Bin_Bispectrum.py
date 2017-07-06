@@ -8,6 +8,7 @@ import numpy as np
 import healpy as hp
 from multiprocessing import Process
 import pywigxjpf as wig
+import matplotlib.pyplot as plt
 from numba import njit
 import math as m
 name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
@@ -79,7 +80,6 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 
     npix = hp.nside2npix(nside_f_est)
     haslam = Haslam_512 * ap_map
-
     lmax = 250
     nbin = 12
 
@@ -128,15 +128,13 @@ def bispec_estimator(nside_f_est, loop, ap_map):
                     trip_count = count_triplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
                     f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
-
 if __name__ == "__main__":
 
     NSIDE = 512
     TEMP = 18
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('18K', 2.0)
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.txt" % ('200K', 2.0)
     print f_name
     apd_map = hp.fitsfunc.read_map(f_name)
-
     Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP, apd_map))
     Cell_Count1.start()
     Cell_Count1.join()

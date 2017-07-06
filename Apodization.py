@@ -133,7 +133,7 @@ def getMapValue(map, ra, dec):
 
     nSide = hp.pixelfunc.npix2nside(map.size)
     # Extract the region around the source
-    vec = hp.pixelfunc.ang2vec(np.pi / 2 - dec * np.pi / 180, ra * np.pi / 180)
+    vec = hp.pixelfunc.ang2vec(np.pi / 2 - np.deg2rad(dec) , np.deg2rad(ra))
     vec = np.array(vec)
     innerPixels = hp.query_disc(nSide, vec, radius=np.radians(1.5*56./60.))
     return innerPixels
@@ -145,7 +145,7 @@ def masking_map(map1, nside, npix, limit, Galcut):
     scheme.
     """
 
-    mask = np.ones(hp.nside2npix(nside), dtype=np.double)
+    mask = np.ones(hp.nside2npix(nside), dtype=np.float64)
     #mask = np.zeros(hp.nside2npix(nside), dtype=np.double)
     area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
 
@@ -218,14 +218,14 @@ def masking_map(map1, nside, npix, limit, Galcut):
                          [340.3, -23.3]])
 
     for i in xrange(0, 8):
-        thta_N = np.pi / 2 - np.radians(dataN[i, 1])
-        ph_N = np.radians(dataN[i, 0])
+        #thta_N = np.pi / 2 - np.radians(dataN[i, 1])
+        #ph_N = np.radians(dataN[i, 0])
 
-        thta_S = np.pi / 2 - np.radians(dataS[i, 1])
-        ph_S = np.radians(dataS[i, 0])
-        indx_N = getMapValue(map1, ph_N, thta_N)
+        #thta_S = np.pi / 2 - np.radians(dataS[i, 1])
+        #ph_S = np.radians(dataS[i, 0])
+        indx_N = getMapValue(map1, dataN[i, 0], dataS[i, 1])
         mask[indx_N] = 0.0
-        indx_S = getMapValue(map1, ph_S, thta_S)
+        indx_S = getMapValue(map1, dataS[i, 0], dataS[i, 1])
         mask[indx_S] = 0.0
 
     return mask
@@ -238,7 +238,7 @@ def apodiz(mask, theta):
     return apodiz_mask
 
 
-def main(fname, NSIDE, theta_ap):
+def main(fname, NSIDE):
 
     input_map = loadMap(fname)
     NPIX = hp.pixelfunc.nside2npix(NSIDE)
@@ -251,8 +251,6 @@ def main(fname, NSIDE, theta_ap):
     count = 0
 
     for LIMIT in arr:
-        print LIMIT
-        print 'Enter If you want Galactic Cut'
 
         #galCut = raw_input('')
         if key[count] == '200K':
@@ -270,8 +268,13 @@ def main(fname, NSIDE, theta_ap):
         imp_map = apodiz(Binary_mask, theta_ap)
         masked_map = input_map*imp_map
 
+        print max(masked_map)
+        print masked_map
+
+
         f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % (key[count],
                                                                                                              theta_ap)
+
         hp.fitsfunc.write_map(f_name, imp_map)
 
         f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.fits" % (key[count],
@@ -310,12 +313,12 @@ def main(fname, NSIDE, theta_ap):
         plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
         count += 1
 
-    plt.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.eps", dpi=100)
+    fig.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.eps", dpi=100)
 
 if __name__ == "__main__":
 
     filename = '/dataspace/sandeep/Bispectrum_data/haslam408_dsds_Remazeilles2014.fits'
-    main(filename, 512, 2.0)
+    main(filename, 512)
 
 
 plt.show()

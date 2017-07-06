@@ -15,29 +15,6 @@ from multiprocessing import Process
 #lmax = 251
 #NSIDE = 512
 
-"""
-def masking_map(map1, nside, npix, limit):
-
-    mask = np.zeros(hp.nside2npix(nside), dtype=np.double)
-    area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
-    for ipix in xrange(0, npix):
-        temp = map1[ipix]*area
-        if temp < limit:
-            mask[ipix] = 1.0
-    for ipix in xrange(0, npix):
-        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
-        if 70. <= np.degrees(theta1) <= 110:
-            mask[ipix] = 0.0
-    return mask
-
-
-def apodiz(mask):
-    width = m.radians(2.0)
-    apodiz_mask = hp.sphtfunc.smoothing(mask, fwhm=width)
-    index = (apodiz_mask < 0)
-    apodiz_mask[index] = 0.000
-    return apodiz_mask
-"""
 
 def gaussian_maps(nmin, nmax):
     """
