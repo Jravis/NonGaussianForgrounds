@@ -139,7 +139,7 @@ def getMapValue(map, ra, dec):
     return innerPixels
 
 
-def masking_map(map1, nside, npix, limit):
+def masking_map(map1, nside, npix, limit, Galcut):
     """
     This routine to apply mask that we decided using count in cell
     scheme.
@@ -154,16 +154,14 @@ def masking_map(map1, nside, npix, limit):
         if temp > limit:
             mask[ipix] = 0.0
 
-    for ipix in xrange(0, npix):
-        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
-        if 70. <= np.degrees(theta1)<= 110.:
-            mask[ipix] = 0.0
+    if Galcut == 'Y':
+        for ipix in xrange(0, npix):
+            theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
+            if 70. <= np.degrees(theta1) <= 110.:
+                mask[ipix] = 0.0
 
-        #if np.degrees(theta1) > 110.:
-        #    mask[ipix] = 1.0
-        #if np.degrees(theta1) < 70.:
-        #    mask[ipix] = 1.0
     print 'Done'
+
     Cyg_A = getMapValue(map1, 23.39055556, 58.80000000)
     mask[Cyg_A] = 0.0
     Cas_A = getMapValue(map1, 19.99122222, 40.73388889)
@@ -245,13 +243,30 @@ def main(fname, NSIDE, theta_ap):
     input_map = loadMap(fname)
     NPIX = hp.pixelfunc.nside2npix(NSIDE)
 
-    key = ['50K', '30K', '18K']
-    arr = [0.000162, 0.000122, 0.000073]
-    clr = ['orange', 'crimson', 'b']
+#    key = ['200K', '50K', '30K', '18K']
+    key = ['200K', '104K', '50K', '30K', '18K']
+    arr = [0.0002553, 0.0002553, 0.000162, 0.000122, 0.000073]
+    clr = ['g', 'orange', 'crimson', 'b', 'k']
+
     count = 0
+
     for LIMIT in arr:
         print LIMIT
-        Binary_mask = masking_map(input_map, NSIDE, NPIX, LIMIT)
+        print 'Enter If you want Galactic Cut'
+
+        #galCut = raw_input('')
+        if key[count] == '200K':
+            galCut ='N'
+        else:
+            galCut = 'Y'
+
+        Binary_mask = masking_map(input_map, NSIDE, NPIX, LIMIT, galCut)
+
+        if key[count] == '104K':
+            theta_ap = 5.0
+        else:
+            theta_ap = 2.0
+
         imp_map = apodiz(Binary_mask, theta_ap)
         masked_map = input_map*imp_map
 
@@ -263,10 +278,12 @@ def main(fname, NSIDE, theta_ap):
                                                                                                      theta_ap)
         hp.fitsfunc.write_map(f_name, masked_map)
 
-        #print 'Enter the Lmax value you want for cl(APS) computation'
+#        print 'Enter the Lmax value you want for cl(APS) computation'
 
-        #LMAX = int(raw_input(''))
-        LMAX = 300
+#        LMAX = int(raw_input(''))
+
+        LMAX = 250
+
         l = np.arange(0, LMAX+1)
 
         cl = hp.sphtfunc.anafast(masked_map, lmax=LMAX)
@@ -293,7 +310,7 @@ def main(fname, NSIDE, theta_ap):
         plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
         count += 1
 
-    plt.savefig("/dataspace/sandeep/Bispectrum_data/AllCl.eps", dpi=100)
+    plt.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.eps", dpi=100)
 
 if __name__ == "__main__":
 
@@ -302,6 +319,5 @@ if __name__ == "__main__":
 
 
 plt.show()
-
 
 

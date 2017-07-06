@@ -14,36 +14,6 @@ name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
 
-
-def masking_map(map1, nside, npix, limit):
-    """
-    This routine to apply mask that we decided using count in cell
-    scheme.
-    """
-    mask = np.zeros(hp.nside2npix(nside), dtype=np.double)
-    area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
-    for ipix in xrange(0, npix):
-        temp = map1[ipix]*area
-        if temp < limit:
-            mask[ipix] = 1.0
-
-    """
-    for ipix in xrange(0, npix):
-        theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
-        if 70. <= np.degrees(theta1) <= 110:
-            mask[ipix] = 0.0
-    """
-    return mask
-
-
-def apodiz(mask):
-    width = m.radians(2.0)
-    apodiz_mask = hp.sphtfunc.smoothing(mask, fwhm=width)
-    index = (apodiz_mask < 0)
-    apodiz_mask[index] = 0.000
-    return apodiz_mask
-
-
 @njit()
 def count_triplet(bin_1, bin_2, bin_3):
     """
@@ -97,7 +67,7 @@ def summation(arr1, arr2, arr3, arr4, num_pix):
     return bi_sum
 
 
-def bispec_estimator(nside_f_est, loop, limit):
+def bispec_estimator(nside_f_est, loop, ap_map):
     """
     :param nside_f_est:
     :param loop:
@@ -108,8 +78,6 @@ def bispec_estimator(nside_f_est, loop, limit):
 # Masking and apodization
 
     npix = hp.nside2npix(nside_f_est)
-    binary_mask = masking_map(Haslam_512, nside_f_est, npix, limit)
-    ap_map = apodiz(binary_mask)
     haslam = Haslam_512 * ap_map
 
     lmax = 250
@@ -117,18 +85,18 @@ def bispec_estimator(nside_f_est, loop, limit):
 
 # using Logrithmic bins
 
-    index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
-
+#    index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
+    index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
     for i in xrange(len(index)):
         index[i] = int(index[i])
 
     print index
-
     # creating filtered map using equation 6 casaponsa et al. and eq (2.6) in Bucher et.al 2015
-
     esti_map = np.zeros((nbin, npix), dtype=np.double)
-    fwhm = 56./60.  # For Haslam FWHM is 56 arc min
-    beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
+
+  #  fwhm = 56./60.  # For Haslam FWHM is 56 arc min
+  # beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
+
     bin_arr = np.zeros((nbin - 1, 2), dtype=int)
 
     for i in xrange(0, nbin):
@@ -138,18 +106,17 @@ def bispec_estimator(nside_f_est, loop, limit):
         if i+1 < nbin:
             final = int(index[i + 1])
             bin_arr[i, 0] = ini
-
             bin_arr[i, 1] = final - 1
 
             for j in xrange(ini, final):  # Summing over all l in a given bin
                 window_func[j] = 1.0
             alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
-            alm_obs = hp.sphtfunc.almxfl(alm_obs, 1./beam_l, mmax=None, inplace=True)
+#            alm_obs = hp.sphtfunc.almxfl(alm_obs, 1./beam_l, mmax=None, inplace=True)
             alm_true = alm_obs
             esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/'
-    s2 = 'Analysis_200KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_18K_test/'
+    s2 = 'Analysis_18KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
     print file_name
     with open(file_name, 'w') as f:
@@ -162,67 +129,31 @@ def bispec_estimator(nside_f_est, loop, limit):
                     f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
-@njit()
-def unbin_bispec_estimator(nside_f_est, loop, limit):
-    """
-    :param nside_f_est:
-    :param loop:
-    :param limit:
-    :return:
-    """
-    npix = hp.nside2npix(nside_f_est)
-    print npix
-    lmax = 251
-    nbin = range(2, 251)
-    print nbin
-
-    binary_mask = masking_map(Haslam_512, nside_f_est, npix, limit)
-    ap_map = apodiz(binary_mask)
-    haslam = Haslam_512 * ap_map
-
-    esti_map = np.zeros((len(nbin), npix), dtype=np.double)
-    fwhm = 56./3600.  # For Haslam FWHM is 56 arc min
-    beam_l = hp.sphtfunc.gauss_beam(m.radians(fwhm), lmax=lmax, pol=False)
-
-    for i in xrange(0, len(nbin)):
-        alm_obs = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
-        window_func = np.zeros(lmax, float)
-        window_func[nbin[i]] = 1.0
-        alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
-        alm_obs = hp.sphtfunc.almxfl(alm_obs, 1./beam_l, mmax=None, inplace=True)
-        alm_true = alm_obs
-        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
-
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/'
-    s2 = 'Analysis_200K_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
-    file_name = s1+s2
-
-    with open(file_name, 'w') as f:
-        f.write("Bis\ti\tj\tk\tcount\n")
-        for i in xrange(0, len(nbin)-1):
-            for j in xrange(i, len(nbin)-1):
-                for k in xrange(j, len(nbin)-1):
-                    if abs(nbin[j]-nbin[k]) <= nbin[i] <= nbin[j]+nbin[k] and (nbin[i]+nbin[j]+nbin[k]) % 2 == 0:
-                        bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                        f.write("%0.6e\t%d\t%d\t%d\n" % (bis, nbin[i], nbin[j], nbin[k]))
-
-
 if __name__ == "__main__":
 
     NSIDE = 512
+    TEMP = 18
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('18K', 2.0)
+    print f_name
+    apd_map = hp.fitsfunc.read_map(f_name)
+
+    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP, apd_map))
+    Cell_Count1.start()
+    Cell_Count1.join()
+
+
 
     #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
     #Cell_Count1.start()
     #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
     #Cell_Count2.start()
-    Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
-    Cell_Count3.start()
+    #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
+    #Cell_Count3.start()
     #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
     #Cell_Count4.start()
 
-    #Cell_Count1.join()
     #Cell_Count2.join()
-    Cell_Count3.join()
+    #Cell_Count3.join()
     #Cell_Count4.join()
 
 
