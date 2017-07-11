@@ -85,8 +85,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 
 # using Logrithmic bins
 
-#    index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
-    index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
+    index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
+#    index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
     for i in xrange(len(index)):
         index[i] = int(index[i])
 
@@ -115,8 +115,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
             alm_true = alm_obs
             esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_18K_test/'
-    s2 = 'Analysis_18KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_104K_test/'
+    s2 = 'Analysis_104KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
     print file_name
     with open(file_name, 'w') as f:
@@ -131,8 +131,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 if __name__ == "__main__":
 
     NSIDE = 512
-    TEMP = 18
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.txt" % ('200K', 2.0)
+    TEMP = 104
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('104K', 5.0)
     print f_name
     apd_map = hp.fitsfunc.read_map(f_name)
     Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP, apd_map))

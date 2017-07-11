@@ -11,8 +11,6 @@ import healpy as hp
 from multiprocessing import Process
 import pywigxjpf as wig
 from numba import njit
-import math as m
-
 
 #wig.wig_table_init(1000)
 #wig.wig_temp_init(1000)
@@ -81,7 +79,7 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
     for fn in xrange(nmin, nmax):
 
         s1 = '/dataspace/sandeep/Bispectrum_data'
-        s2 = '/Gaussian_104K_test/Gaussian_104K_Maps/haslam_104KgaussMap_%d.fits' % fn
+        s2 = '/Gaussian_18K_test/Gaussian_18K_Maps/haslam_18KgaussMap_%d.fits' % fn
 
         filename = s1+s2
         haslam = hp.fitsfunc.read_map(filename)*ap_map
@@ -90,13 +88,10 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
 
         # using Logrithmic bins
 
-        index = 10**np.linspace(np.log10(2), np.log10(251), nbin)
-        #index = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+        #index = 10**np.linspace(np.log10(2), np.log10(251), nbin)
+        index = 10**np.linspace(np.log10(11), np.log10(251), nbin)
 
         # logrithmic bins
-
-        for i in xrange(len(index)):
-            index[i] = int(index[i])
 
         bin_arr = np.zeros((nbin-1, 2), dtype=int)
         esti_map = np.zeros((nbin, npix), dtype=np.double)
@@ -131,7 +126,7 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
 
                 esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_104K_test/Gaussian_Bin_Bispectrum/'
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_18K_test/Gaussian_Bin_Bispectrum/'
         s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
 
@@ -155,9 +150,9 @@ if __name__ == "__main__":
     max_core = 20
     increment = 50
     str = []
-    TEMP = 104
+    TEMP = 18
 
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('104K', 5.0)
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('18K', 2.0)
     apd_map = hp.fitsfunc.read_map(f_name)
 
     for i in xrange(1, max_core + 1):
