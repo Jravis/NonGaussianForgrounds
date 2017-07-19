@@ -26,7 +26,6 @@ def loadMap(filename):
 
     return map
 
-
 def changeSides(map, nSides):
     """
     Take a HEALPix map upsample or downsample the map to make it have
@@ -243,27 +242,20 @@ def main(fname, NSIDE):
     input_map = loadMap(fname)
     NPIX = hp.pixelfunc.nside2npix(NSIDE)
 
-#    key = ['200K', '50K', '30K', '18K']
-    key = ['200K', '104K', '50K', '30K', '18K']
-    arr = [0.0002553, 0.0002553, 0.000162, 0.000122, 0.000073]
+    key = ['200K', '100K', '50K', '30K', '25K']
+    arr = [0.0002553, 0.00035, 0.000162, 0.000122, 0.000101]
     clr = ['g', 'orange', 'crimson', 'b', 'k']
 
     count = 0
 
     for LIMIT in arr:
-
-        #galCut = raw_input('')
         if key[count] == '200K':
             galCut ='N'
         else:
             galCut = 'Y'
 
         Binary_mask = masking_map(input_map, NSIDE, NPIX, LIMIT, galCut)
-
-        if key[count] == '104K':
-            theta_ap = 5.0
-        else:
-            theta_ap = 2.0
+        theta_ap = 2.0
 
         imp_map = apodiz(Binary_mask, theta_ap)
         masked_map = input_map*imp_map
@@ -271,10 +263,8 @@ def main(fname, NSIDE):
         print max(masked_map)
         print masked_map
 
-
         f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % (key[count],
                                                                                                              theta_ap)
-
         hp.fitsfunc.write_map(f_name, imp_map)
 
         f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.fits" % (key[count],
@@ -282,7 +272,6 @@ def main(fname, NSIDE):
         hp.fitsfunc.write_map(f_name, masked_map)
 
 #        print 'Enter the Lmax value you want for cl(APS) computation'
-
 #        LMAX = int(raw_input(''))
 
         LMAX = 250
@@ -290,8 +279,8 @@ def main(fname, NSIDE):
         l = np.arange(0, LMAX+1)
 
         cl = hp.sphtfunc.anafast(masked_map, lmax=LMAX)
-
-        hp.mollview(imp_map, xsize=2000, unit=r'$T_{B}(K)$', nest=False, title='%s' % key[count])
+        print count
+        hp.mollview(imp_map, xsize=2000, coord=['G'], unit=r'$T_{B}(K)$', nest=False, title='%s' % key[count])
 
         name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.eps" % (key[count], theta_ap)
         plt.savefig(name, dpi=100)

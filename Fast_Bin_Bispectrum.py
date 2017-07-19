@@ -8,9 +8,8 @@ import numpy as np
 import healpy as hp
 from multiprocessing import Process
 import pywigxjpf as wig
-import matplotlib.pyplot as plt
 from numba import njit
-import math as m
+
 name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
@@ -85,8 +84,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 
 # using Logrithmic bins
 
-    index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
-#    index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
+ #   index = 10**np.linspace(np.log10(2), np.log10(251), nbin)  #logrithmic bins
+    index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
     for i in xrange(len(index)):
         index[i] = int(index[i])
 
@@ -115,8 +114,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
             alm_true = alm_obs
             esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_104K_test/'
-    s2 = 'Analysis_104KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/'
+    s2 = 'Analysis_25KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
     print file_name
     with open(file_name, 'w') as f:
@@ -131,29 +130,12 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 if __name__ == "__main__":
 
     NSIDE = 512
-    TEMP = 104
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('104K', 5.0)
+    TEMP = 25
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('25K', 2.0)
     print f_name
     apd_map = hp.fitsfunc.read_map(f_name)
     Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP, apd_map))
     Cell_Count1.start()
     Cell_Count1.join()
-
-
-
-    #Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, 18, 0.000073))
-    #Cell_Count1.start()
-    #Cell_Count2 = Process(target=bispec_estimator, args=(NSIDE, 50, 0.000162))
-    #Cell_Count2.start()
-    #Cell_Count3 = Process(target=bispec_estimator, args=(NSIDE, 200, 0.0002553))
-    #Cell_Count3.start()
-    #Cell_Count4 = Process(target=bispec_estimator, args=(NSIDE, 30, 0.000122))
-    #Cell_Count4.start()
-
-    #Cell_Count2.join()
-    #Cell_Count3.join()
-    #Cell_Count4.join()
-
-
 
 
