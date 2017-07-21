@@ -6,8 +6,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
 lmax = 250
 
-s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_100K_test/'
-s2 = 'Analysis_100KBin_Bispectrum_512_100.txt'
+s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/'
+s2 = 'Analysis_25KBin_Bispectrum_512_25.txt'
 
 name = s1+s2
 data = ascii.read(name, guess=False, delimiter='\t')
@@ -50,8 +50,8 @@ esti_bis_1 = np.zeros((1000, len(Bis2)), dtype=np.float64)
 
 for ii in xrange(0, 1000):
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_100K_test/Gaussian_Bin_Bispectrum/'
-    s2 = 'BinnedBispectrum_GaussianMaps_512_100k_%d.txt' % ii
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/Gaussian_Bin_Bispectrum/'
+    s2 = 'BinnedBispectrum_GaussianMaps_512_25k_%d.txt' % ii
 
     name = s1+s2
     data = ascii.read(name, guess=False, delimiter='\t')
@@ -86,8 +86,11 @@ print mean1
 
 nbin = 12
 
-x = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)
-#x = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+#x = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)
+x = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+
+cmap = plt.cm.viridis
+cmap.set_bad(color='grey')
 
 
 def plot_data(count1):
@@ -95,118 +98,134 @@ def plot_data(count1):
     for ii in xrange(len(I3)):
         if I3[ii] == count1:
             index, index1 = I2[ii], I1[ii]
-            data[index, index1] = (Bis1[ii]-mean[ii])/std_dev[ii]
+            temp = (Bis1[ii]-mean[ii])/std_dev[ii]
+            if -2.0 > temp or temp > 2.0:
+                data[index, index1] = (Bis1[ii]-mean[ii])/std_dev[ii]
+    data = np.ma.masked_where(data == 0.0, data)
     return data
 
-logthresh = 0.
+
+
+
+
+
+
+
 fig = plt.figure(1, figsize=(9, 8))
 
 gs = gridspec.GridSpec(3, 3)
 ax1 = plt.subplot(gs[0, 0])
-im = ax1.imshow(plot_data(0), cmap='gist_rainbow', origin='lower', interpolation='nearest')
-                #norm=colors.SymLogNorm(10**-logthresh))
-
+im = ax1.imshow(plot_data(0), cmap=cmap, origin='lower', interpolation='none')
 ax1.set_xlabel(r'$l_{1}$', fontsize=14)
 ax1.set_ylabel(r'$l_{2}$', fontsize=14)
-ax1.set_title(r'$l_{3}\in [2], l_{3}=I_{1}$')
-#ax1.set_title(r'$l_{3}\in [10, 13], l_{3}=I_{1}$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
+
+#ax1.set_title(r'$l_{3}\in [2]$')
+ax1.set_title(r'$l_{3}\in [10, 13]$')
+plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
+
 
 ax2 = plt.subplot(gs[0, 1])
-im = ax2.imshow(plot_data(1), cmap='gist_rainbow', origin='lower', interpolation='nearest')
+im = ax2.imshow(plot_data(1), cmap=cmap, origin='lower', interpolation='none')
 ax2.set_xlabel(r'$l_{1}$', fontsize=14)
 ax2.set_ylabel(r'$l_{2}$', fontsize=14)
-ax2.set_title(r'$l_{3}\in [3], l_{3}=I_{2}$')
-#ax2.set_title(r'$l_{3}\in [14, 18], l_{3}=I_{2}$')
+#ax2.set_title(r'$l_{3}\in [3]$')
+ax2.set_title(r'$l_{3}\in [14, 18]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 ax3 = plt.subplot(gs[0, 2])
-im = ax3.imshow(plot_data(2), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=1.0, vmax=400))
+im = ax3.imshow(plot_data(2), cmap=cmap, origin='lower', interpolation='none')
 ax3.set_xlabel(r'$l_{1}$', fontsize=14)
 ax3.set_ylabel(r'$l_{2}$', fontsize=14)
-ax3.set_title(r'$l_{3}\in [4, 6], l_{3}=I_{3}$')
-#ax3.set_title(r'$l_{3}\in [19, 24], l_{3}=I_{3}$')
+#ax3.set_title(r'$l_{3}\in [4, 6]$')
+ax3.set_title(r'$l_{3}\in [19, 24]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
+
 ax4 = plt.subplot(gs[1, 0])
-im = ax4.imshow(plot_data(3), cmap='gist_rainbow', origin='lower', interpolation='nearest')
+im = ax4.imshow(plot_data(3), cmap=cmap, origin='lower', interpolation='none')
 ax4.set_xlabel(r'$l_{1}$', fontsize=14)
 ax4.set_ylabel(r'$l_{2}$', fontsize=14)
-ax4.set_title(r'$l_{3}\in [7, 10], l_{3}=I_{4}$')
-#ax4.set_title(r'$l_{3}\in [25, 33], l_{3}=I_{4}$')
+#ax4.set_title(r'$l_{3}\in [7, 10]$')
+ax4.set_title(r'$l_{3}\in [25, 33]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 
 ax5 = plt.subplot(gs[1, 1])
-im = ax5.imshow(plot_data(4), cmap='gist_rainbow', origin='lower', interpolation='nearest')
+im = ax5.imshow(plot_data(4), cmap=cmap, origin='lower', interpolation='none')
 ax5.set_xlabel(r'$l_{1}$', fontsize=14)
 ax5.set_ylabel(r'$l_{2}$', fontsize=14)
-ax5.set_title(r'$l_{3}\in [11, 16], l_{3}=I_{5}$')
-#ax5.set_title(r'$l_{3}\in [34, 44], l_{3}=I_{5}$')
+#ax5.set_title(r'$l_{3}\in [11, 16]$')
+ax5.set_title(r'$l_{3}\in [34, 44]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 
 ax6 = plt.subplot(gs[1, 2])
-im = ax6.imshow(plot_data(5), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=1.0, vmax=400))
+im = ax6.imshow(plot_data(5), cmap=cmap, origin='lower', interpolation='none')
 ax6.set_xlabel(r'$l_{1}$', fontsize=14)
 ax6.set_ylabel(r'$l_{2}$', fontsize=14)
-ax6.set_title(r'$l_{3}\in [17, 26], l_{3}=I_{6}$')
-#ax6.set_title(r'$l_{3}\in [45, 59], l_{3}=I_{6}$')
+#ax6.set_title(r'$l_{3}\in [17, 26]$')
+ax6.set_title(r'$l_{3}\in [45, 59]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 
 ax7 = plt.subplot(gs[2, 0])
-im = ax7.imshow(plot_data(6), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=1.0, vmax=400))
+im = ax7.imshow(plot_data(6), cmap=cmap, origin='lower', interpolation='none')
 ax7.set_xlabel(r'$l_{1}$', fontsize=14)
 ax7.set_ylabel(r'$l_{2}$', fontsize=14)
-ax7.set_title(r'$l_{3}\in [27, 42], l_{3}=I_{7}$')
-#ax7.set_title(r'$l_{3}\in [60, 79], l_{3}=I_{7}$')
+#ax7.set_title(r'$l_{3}\in [27, 42]$')
+ax7.set_title(r'$l_{3}\in [60, 79]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 
 ax8 = plt.subplot(gs[2, 1])
-im = ax8.imshow(plot_data(7), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=1.0, vmax=400))
+im = ax8.imshow(plot_data(7), cmap=cmap, origin='lower', interpolation='none')
 ax8.set_xlabel(r'$l_{1}$', fontsize=14)
 ax8.set_ylabel(r'$l_{2}$', fontsize=14)
-ax8.set_title(r'$l_{3}\in [43, 66], l_{3}=I_{8}$')
-#ax8.set_title(r'$l_{3}\in [80, 105], l_{3}=I_{8}$')
+#ax8.set_title(r'$l_{3}\in [43, 66]$')
+ax8.set_title(r'$l_{3}\in [80, 105]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 
 ax9 = plt.subplot(gs[2, 2])
-im = ax9.imshow(plot_data(8), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=1.0, vmax=400))
+im = ax9.imshow(plot_data(8), cmap=cmap, origin='lower', interpolation='none')
 ax9.set_xlabel(r'$l_{1}$', fontsize=14)
 ax9.set_ylabel(r'$l_{2}$', fontsize=14)
-ax9.set_title(r'$l_{3}\in [67, 103], l_{3}=I_{9}$')
-#ax9.set_title(r'$l_{3}\in [106, 141], l_{3}=I_{9}$')
+#ax9.set_title(r'$l_{3}\in [67, 103], l_{3}=I_{9}$')
+ax9.set_title(r'$l_{3}\in [106, 141]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_100K_test/plots/"
-#            "100K_2d_Binnedplots_data-mean_stdDev_1.eps", dpi=100)
+#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_Binnedplots_data-mean_stdDev_1.pdf"
+#            , dpi=1200)
 
+
+# ==========================================================================================
 
 plt.figure(2, figsize=(8, 6))
 gs = gridspec.GridSpec(2, 2)
 ax10 = plt.subplot(gs[0, 0])
-im = ax10.imshow(plot_data(9), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=0.01, vmax=400))
+im = ax10.imshow(plot_data(9), cmap=cmap, origin='lower', interpolation='none')
 ax10.set_xlabel(r'$l_{1}$', fontsize=14)
 ax10.set_ylabel(r'$l_{2}$', fontsize=14)
-ax10.set_title(r'$l_{3}\in [104, 160], l_{3}=I_{10}$')
-#ax10.set_title(r'$l_{3}\in [142, 187], l_{3}=I_{10}$')
-plt.colorbar(im, norm=colors.LogNorm(), fraction=0.046, pad=0.04)
+#ax10.set_title(r'$l_{3}\in [104, 160]$')
+ax10.set_title(r'$l_{3}\in [142, 187]$')
+plt.colorbar(im, fraction=0.046, pad=0.04)
+
 
 ax11 = plt.subplot(gs[0, 1])
-im = ax11.imshow(plot_data(10), cmap='gist_rainbow', origin='lower', interpolation='nearest')#, norm=LogNorm(vmin=0.01, vmax=400))
+im = ax11.imshow(plot_data(10), cmap=cmap, origin='lower', interpolation='none')
 ax11.set_xlabel(r'$l_{1}$', fontsize=14)
 ax11.set_ylabel(r'$l_{2}$', fontsize=14)
-ax11.set_title(r'$l_{3}\in [161, 249], l_{3}=I_{11}$')
-#ax11.set_title(r'$l_{3}\in [188, 249], l_{3}=I_{11}$')
+#ax11.set_title(r'$l_{3}\in [161, 249]$')
+ax11.set_title(r'$l_{3}\in [188, 249]$')
 plt.colorbar(im, fraction=0.046, pad=0.04)
 
 fig.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_100K_test/plots/"
-#            "100K_2d_Binnedplots_data-mean_stdDev_2.eps", dpi=100)
+#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_Binnedplots_data-mean_stdDev_2.pdf",
+#            dpi=1200)
+
+
+# =============================================================================================
 
 
 plt.figure(3, figsize=(8, 6))
@@ -222,5 +241,6 @@ plt.xlabel(r"$l$", fontsize=18)
 plt.ylabel(r"$B_{lll}$", fontsize=18)
 #plt.xlim(6,)
 plt.yscale('symlog', linthreshy=0.001)
-#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_100K_test/plots/Bispectrum_lll_1.eps', dpi=100)
+#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/Bispectrum_lll_1.pdf', dpi=1200)
+
 plt.show()

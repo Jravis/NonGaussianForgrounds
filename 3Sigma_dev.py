@@ -11,20 +11,13 @@ import healpy as hp
 from multiprocessing import Process
 import pywigxjpf as wig
 from numba import njit
-
+import _countTriplet
 #wig.wig_table_init(1000)
 #wig.wig_temp_init(1000)
 
-
+"""
 @njit()
 def count_triplet(bin_1, bin_2, bin_3):
-    """
-    This routine count number of valid l-triplet in a i-trplet bin
-    which we use to evaluate average
-    :param bin_min:
-    :param bin_max:
-    :return:
-    """
     count = 0
     for l3 in xrange(bin_1[0], bin_1[1]+1):
         for l2 in xrange(bin_2[0], bin_2[1]+1):
@@ -32,7 +25,7 @@ def count_triplet(bin_1, bin_2, bin_3):
                 if abs(l2-l1) <= l3 <= l2+l1 and (l3+l2+l1) % 2 == 0:
                     count += 1
     return count
-
+"""
 
 @njit()
 def g(l1, l2, l3):
@@ -79,21 +72,34 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
     for fn in xrange(nmin, nmax):
 
         s1 = '/dataspace/sandeep/Bispectrum_data'
-        s2 = '/Gaussian_25K_test/Gaussian_25K_Maps/haslam_25KgaussMap_%d.fits' % fn
+        s2 = '/Gaussian_200K_test/Gaussian_200K_Maps/haslam_200KgaussMap_%d.fits' % fn
 
         filename = s1+s2
         haslam = hp.fitsfunc.read_map(filename)*ap_map
         lmax = 251
-        nbin = 12
+        #nbin = 12
+
+        nbin = 30
+
 
         # using Logrithmic bins
 
         #index = 10**np.linspace(np.log10(2), np.log10(251), nbin)
-        index = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+        #index = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+
+        # Using Different binning scheme
+        ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+        index = []
+        for i in ind:
+            if i not in index:
+                index.append(i)
+
+        index = np.asarray(index, dtype=np.int32)
+        nbin = len(index)
 
         # logrithmic bins
 
-        bin_arr = np.zeros((nbin-1, 2), dtype=int)
+        bin_arr = np.zeros((nbin-1, 2), dtype=np.int32)
         esti_map = np.zeros((nbin, npix), dtype=np.double)
 
         #fwhm = 56./60.  # For Haslam FWHM is 56 arc min
@@ -126,8 +132,9 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
 
                 esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/Gaussian_Bin_Bispectrum/'
-        s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bin_Bispectrum/'
+        #s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
+        s2 = 'BinnedBispectrum_NewBin_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
 
         with open(file_name, 'w') as f:
@@ -136,7 +143,7 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
                 for j in xrange(i, nbin-1):
                     for k in xrange(j, nbin-1):
                         bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], ap_map, npix)
-                        trip_count = count_triplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
+                        trip_count = _countTriplet.countTriplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
                         f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
@@ -150,9 +157,9 @@ if __name__ == "__main__":
     max_core = 20
     increment = 50
     str = []
-    TEMP = 25
+    TEMP = 200
 
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('25K', 2.0)
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('200K', 2.0)
     apd_map = hp.fitsfunc.read_map(f_name)
 
     for i in xrange(1, max_core + 1):

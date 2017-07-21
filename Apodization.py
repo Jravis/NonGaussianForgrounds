@@ -282,12 +282,12 @@ def main(fname, NSIDE):
         print count
         hp.mollview(imp_map, xsize=2000, coord=['G'], unit=r'$T_{B}(K)$', nest=False, title='%s' % key[count])
 
-        name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.eps" % (key[count], theta_ap)
-        plt.savefig(name, dpi=100)
+        name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.pdf" % (key[count], theta_ap)
+        plt.savefig(name, dpi=1200)
 
         hp.mollview(masked_map, xsize=2000, coord=['G'], unit=r'$T_{B}(K)$', nest=False, title='408 MHz,%s' % key[count])
-        name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.eps" % (key[count], theta_ap)
-        plt.savefig(name, dpi=100)
+        name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.pdf" % (key[count], theta_ap)
+        plt.savefig(name, dpi=1200)
 
         fig = plt.figure(8, figsize=(7, 7))
         plt.plot(l, l * (l + 1) * cl, '-', color=clr[count], linewidth=2, label='%s' % key[count])
@@ -302,7 +302,7 @@ def main(fname, NSIDE):
         plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
         count += 1
 
-    fig.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.eps", dpi=100)
+    fig.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.pdf", dpi=1200)
 
 if __name__ == "__main__":
 
