@@ -90,7 +90,9 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 #    for i in xrange(len(index)):
 #        index[i] = int(index[i])
 
-    ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+    #ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+    index = np.logspace(np.log10(11), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+    """
     index = []
     for i in ind:
         if i not in index:
@@ -98,7 +100,7 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 
     index = np.asarray(index, dtype=np.int32)
     nbin = len(index)
-
+    """
     print index
 
 
@@ -131,9 +133,9 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 
 
 
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/'
-    #s2 = 'Analysis_50KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
-    s2 = 'Analysis_50K_NewBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/'
+    #s2 = 'Analysis_25KBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
+    s2 = 'Analysis_25K_NewBin_Bispectrum_%d_%d.txt' % (nside_f_est, loop)
     file_name = s1+s2
     print file_name
     with open(file_name, 'w') as f:
@@ -149,8 +151,8 @@ def bispec_estimator(nside_f_est, loop, ap_map):
 if __name__ == "__main__":
 
     NSIDE = 512
-    TEMP = 50
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('50K', 2.0)
+    TEMP = 25
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('25K', 2.0)
     print f_name
     apd_map = hp.fitsfunc.read_map(f_name)
     Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP, apd_map))

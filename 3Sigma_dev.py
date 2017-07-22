@@ -72,7 +72,7 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
     for fn in xrange(nmin, nmax):
 
         s1 = '/dataspace/sandeep/Bispectrum_data'
-        s2 = '/Gaussian_200K_test/Gaussian_200K_Maps/haslam_200KgaussMap_%d.fits' % fn
+        s2 = '/Gaussian_30K_test/Gaussian_30K_Maps/haslam_30KgaussMap_%d.fits' % fn
 
         filename = s1+s2
         haslam = hp.fitsfunc.read_map(filename)*ap_map
@@ -88,15 +88,18 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
         #index = 10**np.linspace(np.log10(11), np.log10(251), nbin)
 
         # Using Different binning scheme
-        ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+        #ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+        index = np.logspace(np.log10(11), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+        """
         index = []
+
         for i in ind:
             if i not in index:
                 index.append(i)
 
         index = np.asarray(index, dtype=np.int32)
         nbin = len(index)
-
+        """
         # logrithmic bins
 
         bin_arr = np.zeros((nbin-1, 2), dtype=np.int32)
@@ -132,7 +135,7 @@ def bispec_estimator(nside_f_est, loop, ap_map, nmin, nmax):
 
                 esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)
 
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_200K_test/Gaussian_Bin_Bispectrum/'
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_30K_test/Gaussian_Bin_Bispectrum/'
         #s2 = 'BinnedBispectrum_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         s2 = 'BinnedBispectrum_NewBin_GaussianMaps_%d_%dk_%d.txt' % (nside_f_est, loop, fn)
         file_name = s1+s2
@@ -157,9 +160,9 @@ if __name__ == "__main__":
     max_core = 20
     increment = 50
     str = []
-    TEMP = 200
+    TEMP = 30
 
-    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('200K', 2.0)
+    f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('30K', 2.0)
     apd_map = hp.fitsfunc.read_map(f_name)
 
     for i in xrange(1, max_core + 1):
