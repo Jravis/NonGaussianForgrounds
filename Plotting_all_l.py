@@ -7,7 +7,9 @@ from matplotlib.colors import LogNorm
 lmax = 250
 
 s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/'
-s2 = 'Analysis_25KBin_Bispectrum_512_25.txt'
+#s2 = 'Analysis_25KBin_Bispectrum_512_25.txt'
+s2 = 'Analysis_25K_NewBin_Bispectrum_512_25.txt'
+
 
 name = s1+s2
 data = ascii.read(name, guess=False, delimiter='\t')
@@ -51,7 +53,8 @@ esti_bis_1 = np.zeros((1000, len(Bis2)), dtype=np.float64)
 for ii in xrange(0, 1000):
 
     s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/Gaussian_Bin_Bispectrum/'
-    s2 = 'BinnedBispectrum_GaussianMaps_512_25k_%d.txt' % ii
+    #s2 = 'BinnedBispectrum_GaussianMaps_512_25k_%d.txt' % ii
+    s2 = 'BinnedBispectrum_NewBin_GaussianMaps_512_25k_%d.txt' % ii
 
     name = s1+s2
     data = ascii.read(name, guess=False, delimiter='\t')
@@ -80,152 +83,97 @@ std_dev = np.std(esti_bis, 0, dtype=np.float64)
 
 mean1 = np.mean(esti_bis_1, 0, dtype=np.float64)
 std_dev1 = np.std(esti_bis_1, 0, dtype=np.float64)
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-print Bis2
-print mean1
+#nbin = 12
+nbin = 30
 
-nbin = 12
+Key = '%sK'%25
 
-#x = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)
-x = 10**np.linspace(np.log10(11), np.log10(251), nbin)
+if Key == '200K' or Key=='100K' or Key =='50K':
+    ind = np.logspace(np.log10(2), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+    index = []
+
+    for i in ind:
+        if i not in index:
+            index.append(i)
+
+    index = np.asarray(index, dtype=np.int32)
+    nbin = len(index)
+else:
+    index = np.logspace(np.log10(11), np.log10(250), nbin, endpoint=True, dtype=np.int32)
+
+
+bin_arr = np.zeros((nbin - 1, 2), dtype=np.int32)
+
+for i in xrange(0, nbin):
+    ini = index[i]
+    if i + 1 < nbin:
+        final = index[i + 1]
+        bin_arr[i, 0] = ini
+        bin_arr[i, 1] = final - 1
+
+
 
 cmap = plt.cm.viridis
 cmap.set_bad(color='grey')
 
 
 def plot_data(count1):
+
     data = np.zeros((nbin-1, nbin-1), dtype=np.float64)
     for ii in xrange(len(I3)):
         if I3[ii] == count1:
             index, index1 = I2[ii], I1[ii]
             temp = (Bis1[ii]-mean[ii])/std_dev[ii]
-            if -2.0 > temp or temp > 2.0:
-                data[index, index1] = (Bis1[ii]-mean[ii])/std_dev[ii]
+            #if -2.0 > temp or temp > 2.0:
+            data[index, index1] = (Bis1[ii]-mean[ii])/std_dev[ii]
     data = np.ma.masked_where(data == 0.0, data)
-    return data
+    return data, [bin_arr[count1,0], bin_arr[count1, 1]]
 
 
+Indx = 0
+Indxy = 0
+nn = 0
+fig = plt.figure(1, figsize=(10, 9))
+gs = gridspec.GridSpec(4, 4)
+#gs.update(wspace=0.025, hspace=0.05) # set the spacing between axes.
+for Indx in xrange(0, 4):
+    for Indy in xrange(0, 4):
+        a , b = plot_data(nn)
+        ax1 = plt.subplot(gs[Indx, Indy])
+        im = ax1.imshow(a, cmap=cmap, origin='lower', interpolation='none')
+        ax1.set_xlabel(r'$l_{1}$', fontsize=14)
+        ax1.set_ylabel(r'$l_{2}$', fontsize=14)
+        ax1.set_title(r'$l_{3}\in [%d, %d]$'%(b[0], b[1]))
+        #ax1.set_aspect('equal')
+        plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
+        nn+=1
+
+plt.tight_layout()  # Or equivalently,  "plt.tight_layout()"
+plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_New_Binnedplots_data-mean_stdDev_1.pdf", dpi=600)
+
+fig = plt.figure(2, figsize=(10, 9))
+gs = gridspec.GridSpec(4, 4)
+#gs.update(wspace=0.025, hspace=0.05) # set the spacing between axes.
+for Indx in xrange(0, 4):
+    for Indy in xrange(0, 4):
+        if nn< nbin-1:
+            a , b = plot_data(nn)
+            ax1 = plt.subplot(gs[Indx, Indy])
+            im = ax1.imshow(a, cmap=cmap, origin='lower', interpolation='none')
+            ax1.set_xlabel(r'$l_{1}$', fontsize=14)
+            ax1.set_ylabel(r'$l_{2}$', fontsize=14)
+            ax1.set_title(r'$l_{3}\in [%d, %d]$'%(b[0], b[1]))
+            #ax1.set_aspect('equal')
+            plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
+            nn+=1
+        else:
+            break
 
 
-
-
-
-
-fig = plt.figure(1, figsize=(9, 8))
-
-gs = gridspec.GridSpec(3, 3)
-ax1 = plt.subplot(gs[0, 0])
-im = ax1.imshow(plot_data(0), cmap=cmap, origin='lower', interpolation='none')
-ax1.set_xlabel(r'$l_{1}$', fontsize=14)
-ax1.set_ylabel(r'$l_{2}$', fontsize=14)
-
-#ax1.set_title(r'$l_{3}\in [2]$')
-ax1.set_title(r'$l_{3}\in [10, 13]$')
-plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
-
-
-ax2 = plt.subplot(gs[0, 1])
-im = ax2.imshow(plot_data(1), cmap=cmap, origin='lower', interpolation='none')
-ax2.set_xlabel(r'$l_{1}$', fontsize=14)
-ax2.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax2.set_title(r'$l_{3}\in [3]$')
-ax2.set_title(r'$l_{3}\in [14, 18]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-ax3 = plt.subplot(gs[0, 2])
-im = ax3.imshow(plot_data(2), cmap=cmap, origin='lower', interpolation='none')
-ax3.set_xlabel(r'$l_{1}$', fontsize=14)
-ax3.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax3.set_title(r'$l_{3}\in [4, 6]$')
-ax3.set_title(r'$l_{3}\in [19, 24]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax4 = plt.subplot(gs[1, 0])
-im = ax4.imshow(plot_data(3), cmap=cmap, origin='lower', interpolation='none')
-ax4.set_xlabel(r'$l_{1}$', fontsize=14)
-ax4.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax4.set_title(r'$l_{3}\in [7, 10]$')
-ax4.set_title(r'$l_{3}\in [25, 33]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax5 = plt.subplot(gs[1, 1])
-im = ax5.imshow(plot_data(4), cmap=cmap, origin='lower', interpolation='none')
-ax5.set_xlabel(r'$l_{1}$', fontsize=14)
-ax5.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax5.set_title(r'$l_{3}\in [11, 16]$')
-ax5.set_title(r'$l_{3}\in [34, 44]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax6 = plt.subplot(gs[1, 2])
-im = ax6.imshow(plot_data(5), cmap=cmap, origin='lower', interpolation='none')
-ax6.set_xlabel(r'$l_{1}$', fontsize=14)
-ax6.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax6.set_title(r'$l_{3}\in [17, 26]$')
-ax6.set_title(r'$l_{3}\in [45, 59]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax7 = plt.subplot(gs[2, 0])
-im = ax7.imshow(plot_data(6), cmap=cmap, origin='lower', interpolation='none')
-ax7.set_xlabel(r'$l_{1}$', fontsize=14)
-ax7.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax7.set_title(r'$l_{3}\in [27, 42]$')
-ax7.set_title(r'$l_{3}\in [60, 79]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax8 = plt.subplot(gs[2, 1])
-im = ax8.imshow(plot_data(7), cmap=cmap, origin='lower', interpolation='none')
-ax8.set_xlabel(r'$l_{1}$', fontsize=14)
-ax8.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax8.set_title(r'$l_{3}\in [43, 66]$')
-ax8.set_title(r'$l_{3}\in [80, 105]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax9 = plt.subplot(gs[2, 2])
-im = ax9.imshow(plot_data(8), cmap=cmap, origin='lower', interpolation='none')
-ax9.set_xlabel(r'$l_{1}$', fontsize=14)
-ax9.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax9.set_title(r'$l_{3}\in [67, 103], l_{3}=I_{9}$')
-ax9.set_title(r'$l_{3}\in [106, 141]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-fig.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_Binnedplots_data-mean_stdDev_1.pdf"
-#            , dpi=1200)
-
-
-# ==========================================================================================
-
-plt.figure(2, figsize=(8, 6))
-gs = gridspec.GridSpec(2, 2)
-ax10 = plt.subplot(gs[0, 0])
-im = ax10.imshow(plot_data(9), cmap=cmap, origin='lower', interpolation='none')
-ax10.set_xlabel(r'$l_{1}$', fontsize=14)
-ax10.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax10.set_title(r'$l_{3}\in [104, 160]$')
-ax10.set_title(r'$l_{3}\in [142, 187]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-
-ax11 = plt.subplot(gs[0, 1])
-im = ax11.imshow(plot_data(10), cmap=cmap, origin='lower', interpolation='none')
-ax11.set_xlabel(r'$l_{1}$', fontsize=14)
-ax11.set_ylabel(r'$l_{2}$', fontsize=14)
-#ax11.set_title(r'$l_{3}\in [161, 249]$')
-ax11.set_title(r'$l_{3}\in [188, 249]$')
-plt.colorbar(im, fraction=0.046, pad=0.04)
-
-fig.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_Binnedplots_data-mean_stdDev_2.pdf",
-#            dpi=1200)
-
-
-# =============================================================================================
+plt.tight_layout()  # Or equivalently,  "plt.tight_layout()"
+plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_New_Binnedplots_data-mean_stdDev_2.pdf", dpi=600)
 
 
 plt.figure(3, figsize=(8, 6))
@@ -241,6 +189,5 @@ plt.xlabel(r"$l$", fontsize=18)
 plt.ylabel(r"$B_{lll}$", fontsize=18)
 #plt.xlim(6,)
 plt.yscale('symlog', linthreshy=0.001)
-#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/Bispectrum_lll_1.pdf', dpi=1200)
-
+plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/NewBin_Bispectrum_lll_1.pdf', dpi=600)
 plt.show()
