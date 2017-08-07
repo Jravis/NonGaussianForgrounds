@@ -8,35 +8,41 @@ from scipy import stats
 
 name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
 Haslam_512 = hp.fitsfunc.read_map(name)
-
-nside_f_est = 512
-
-f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % ('25K', 2.0)
+Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
+nside_f_est = 128
+f_name ='/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_binary_128/Mask_30K_binary_ns_128.fits'
 ap_map = hp.fitsfunc.read_map(f_name, verbose=False)
 npix = hp.nside2npix(nside_f_est)
-haslam = Haslam_512 * ap_map
+haslam = Haslam_128 * ap_map
 
-lmax = 251
-nbin = 12
+lmax = 256
+nbin = 11
+index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
+ind = (index!=11)
+index=index[ind]
 
-#index = 10 ** np.linspace(np.log10(2), np.log10(251), nbin)  # logrithmic bins
-index = 10 ** np.linspace(np.log10(11), np.log10(251), nbin)
-
-
-bin_arr = [[] for i in range(12)]
+bin_arr = [[] for i in range(11)]
 bin_arr1 = np.zeros((nbin-1, 2), dtype=int)
 for i in xrange(0, nbin):
-    ini = int(index[i])
+    ini = index[i]
     if i + 1 < nbin:
-        final = int(index[i + 1])
-        bin_arr1[i, 0] = ini
-        bin_arr1[i, 1] = final
-        bin_arr[i].append(range(ini, final))
+        final = index[i + 1]
+        if ini+5 > final:
+            tmp = abs(final-ini)
+            bin_arr1[i, 0] = ini
+            bin_arr1[i, 1] = final+tmp
+            bin_arr[i].append(range(ini, final+tmp))
+            index[i+1]=final+tmp
+        else:
+            bin_arr1[i, 0]=ini
+            bin_arr1[i, 1]=final
+            bin_arr[i].append(range(ini, final))
+
+print bin_arr1
 
 alm_obs_actual = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
 skewr_actual = []
 skewi_actual = []
-
 
 kurti_actual = []
 kurtr_actual = []
@@ -65,15 +71,13 @@ for i in xrange(0, nbin-1):
     #real_alm, real_bin_edges = np.histogram(almr, bins='auto')
     #imag_alm, imag_bin_edges = np.histogram(almi, bins='auto')
 
-#    ar, critr, signir = stats.anderson(almr, dist='norm')
-#    ai, criti, signii = stats.anderson(almi, dist='norm')
 
     skewr_actual.append(stats.skew(almr, axis=0, bias=True))
 
     skewi_actual.append(stats.skew(almi, axis=0, bias=True))
 
-    kurtr_actual.append(stats.kurtosis(almr, axis=0, fisher=True, bias=True))
-    kurti_actual.append(stats.kurtosis(almi, axis=0, fisher=True, bias=True))
+    kurtr_actual.append(stats.kurtosis(almr, axis=0, fisher=False, bias=True))
+    kurti_actual.append(stats.kurtosis(almi, axis=0, fisher=False, bias=True))
 
 
 # ==============================================================================
@@ -93,7 +97,8 @@ kurti = np.zeros((1000, nbin-1), dtype=np.float32)
 
 for fn in xrange(0, 1000):
     s1 = '/dataspace/sandeep/Bispectrum_data'
-    s2 = '/Gaussian_25K_test/Gaussian_25K_Maps/haslam_25KgaussMap_%d.fits' % fn
+    s2 = '/Gaussian_30K_test/Gaussian_30K_Maps/haslam_30KgaussMap_%d.fits' % fn
+
     filename = s1+s2
     haslam = hp.fitsfunc.read_map(filename, verbose=False)*ap_map
     alm_obs = hp.sphtfunc.map2alm(haslam, lmax=lmax, iter=3)
@@ -125,8 +130,8 @@ for fn in xrange(0, 1000):
 
         skewi[fn, i] = stats.skew(almi, axis=0, bias=True)
 
-        kurtr[fn, i] = stats.kurtosis(almr, axis=0, fisher=True, bias=True)
-        kurti[fn, i] = stats.kurtosis(almi, axis=0, fisher=True, bias=True)
+        kurtr[fn, i] = stats.kurtosis(almr, axis=0, fisher=False, bias=True)
+        kurti[fn, i] = stats.kurtosis(almi, axis=0, fisher=False, bias=True)
 
 skewr_mean = np.mean(skewr, 0, dtype=np.float32)
 skewr_std_dev = np.std(skewr, 0, dtype=np.float32)
@@ -141,60 +146,25 @@ kurti_std_dev = np.std(kurti, 0, dtype=np.float32)
 
 I = np.arange(nbin-1)
 
-"""
-test = np.array([skewr[:, 4], skewr[:, 5], skewr[:, 6], skewr[:, 7], skewr[:, 8], skewr[:, 9]])
-test = test.T
-
-
-pvalue = []
-for i in xrange(4, 10):
-    ind = (skewr[:, i] < skewr_actual[i])
-    test1 = skewr[ind, i]
-    print test
-    print skewr_actual[i]
-    P = (len(test1)+1)/100.
-    pvalue.append(P)
-
-fig = plt.figure(1, figsize=(8, 8))
-ax1 = plt.subplot(1, 1, 1)
-violin_parts = ax1.violinplot(test, showmedians=True)
-ax1.plot(1.0, skewr_actual[4], 'bo', ms=10, label="p-value-%0.4f" % pvalue[0])
-ax1.plot(2.0, skewr_actual[5], 'mo', ms=10, label="p-value-%0.4f" % pvalue[1])
-ax1.plot(3.0, skewr_actual[6], 'ro', ms=10, label="p-value-%0.4f" % pvalue[2])
-ax1.plot(4.0, skewr_actual[7], 'co', ms=10, label="p-value-%0.4f" % pvalue[3])
-ax1.plot(5.0, skewr_actual[8], 'yo', ms=10, label="p-value-%0.4f" % pvalue[4])
-ax1.plot(6.0, skewr_actual[9], 'go', ms=10, label="p-value-%0.4f" % pvalue[5])
-
-ax1.set_xticklabels(['', r'$l_{4}$', r'$l_{5}$', r'$l_{6}$', r'$l_{7}$', r'$l_{8}$', r'$l_{9}$'],
-                     weight='extra bold', fontsize='x-large')
-
-for partname in ('cbars', 'cmins', 'cmaxes', 'cmedians'):
-    vp = violin_parts[partname]
-    vp.set_edgecolor('k')
-    vp.set_linewidth(2)
-for vp in violin_parts['bodies']:
-    vp.set_facecolor('#C71585')
-    vp.set_edgecolor('k')
-    vp.set_linewidth(1)
-    vp.set_alpha(0.7)
-plt.legend()
-plt.minorticks_on()
-"""
 
 fig = plt.figure(1, figsize=(10, 6))
 gs = gridspec.GridSpec(2, 2)
+
+
 ax1 = plt.subplot(gs[0, 0])
 ax1.fill_between(I, (skewr_mean-skewr_std_dev), (skewr_mean+skewr_std_dev), alpha=0.8, edgecolor='k',
                  facecolor='blue')
 ax1.fill_between(I, (skewr_mean-2.*skewr_std_dev), (skewr_mean + 2.*skewr_std_dev), alpha=0.2, edgecolor='k',
                  facecolor='green')
 
+ax1.plot(I, (skewr_mean), '-', color='m', linewidth=2, label='mean')
 ax1.plot(I, skewr_actual, '-', color='r', linewidth=2, label='Actual')
+
 
 ax1.set_xlabel(r"$I$", fontsize=18)
 ax1.set_ylabel(r"$S_{3}$", fontsize=18)
-ax1.set_title("25K Real alm")
-ax1.set_xlim(0, 10.1)
+ax1.set_title("30K Real alm")
+ax1.set_xlim(0, 10)
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
@@ -207,13 +177,14 @@ ax2.fill_between(I, (skewi_mean-skewi_std_dev), (skewi_mean+skewi_std_dev), alph
 ax2.fill_between(I, (skewi_mean-2.*skewi_std_dev), (skewi_mean+2.*skewi_std_dev), alpha=0.2, edgecolor='k',
                  facecolor='green')
 
+ax2.plot(I, (skewi_mean), '-', color='m', linewidth=2, label='mean')
 ax2.plot(I, skewi_actual, '-', color='r', linewidth=2, label='Actual')
 
 ax2.set_xlabel(r"$I$", fontsize=18)
 ax2.set_ylabel(r"$S_{3}$", fontsize=18)
-ax2.set_title("25K Imag alm")
+ax2.set_title("30K Imag alm")
 
-ax2.set_xlim(0, 10.1)
+ax2.set_xlim(0, 10)
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
@@ -228,12 +199,13 @@ ax3.fill_between(I, (kurtr_mean-kurtr_std_dev), (kurtr_mean+kurtr_std_dev), alph
 ax3.fill_between(I, (kurtr_mean-2.*kurtr_std_dev), (kurtr_mean+2.*kurtr_std_dev), alpha=0.2, edgecolor='k',
                  facecolor='green')
 
+ax3.plot(I, (kurtr_mean), '-', color='m', linewidth=2, label='mean')
 ax3.plot(I, kurtr_actual, '-', color='r', linewidth=2, label='Actual')
 
-ax3.set_title("25K Real alm")
+#ax3.set_title("30K Real alm")
 ax3.set_xlabel(r"$I$", fontsize=18)
 ax3.set_ylabel(r"$S_{4}$", fontsize=18)
-ax3.set_xlim(0, 10.1)
+ax3.set_xlim(0, 10)
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 
@@ -243,21 +215,28 @@ ax4.fill_between(I, (kurti_mean-kurti_std_dev), (kurti_mean+kurti_std_dev), alph
                  facecolor='blue')
 ax4.fill_between(I, (kurti_mean-2.*kurti_std_dev), (kurti_mean+2.*kurti_std_dev), alpha=0.2, edgecolor='k',
                  facecolor='green')
+
+ax4.plot(I, (kurti_mean), '-', color='m', linewidth=2, label='mean')
 ax4.plot(I, kurti_actual, '-', color='r', linewidth=2, label='Actual')
 
-ax4.set_title("25K Imag alm")
+#ax4.set_title("30K Imag alm")
 ax4.set_xlabel(r"$I$", fontsize=18)
 ax4.set_ylabel(r"$S_{4}$", fontsize=18)
-ax4.set_xlim(0, 10.1)
+ax4.set_xlim(0, 10)
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
 
 plt.tight_layout()
 
-fig.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/bin_skewness_Kurtosis_25K.pdf", dpi=1200)
+fig.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_30K_test/bin_skewness_Kurtosis_30K.pdf", dpi=600)
 
 plt.show()
+
+
+
+
+
 
 
 
@@ -323,3 +302,51 @@ plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/alm_25K_stat/A
             dpi=100)
 plt.show()
 """
+
+#Voilin Plot
+"""
+test = np.array([skewr[:, 4], skewr[:, 5], skewr[:, 6], skewr[:, 7], skewr[:, 8], skewr[:, 9]])
+test = test.T
+
+
+pvalue = []
+for i in xrange(4, 10):
+    ind = (skewr[:, i] < skewr_actual[i])
+    test1 = skewr[ind, i]
+    print test
+    print skewr_actual[i]
+    P = (len(test1)+1)/100.
+    pvalue.append(P)
+
+fig = plt.figure(1, figsize=(8, 8))
+ax1 = plt.subplot(1, 1, 1)
+violin_parts = ax1.violinplot(test, showmedians=True)
+ax1.plot(1.0, skewr_actual[4], 'bo', ms=10, label="p-value-%0.4f" % pvalue[0])
+ax1.plot(2.0, skewr_actual[5], 'mo', ms=10, label="p-value-%0.4f" % pvalue[1])
+ax1.plot(3.0, skewr_actual[6], 'ro', ms=10, label="p-value-%0.4f" % pvalue[2])
+ax1.plot(4.0, skewr_actual[7], 'co', ms=10, label="p-value-%0.4f" % pvalue[3])
+ax1.plot(5.0, skewr_actual[8], 'yo', ms=10, label="p-value-%0.4f" % pvalue[4])
+ax1.plot(6.0, skewr_actual[9], 'go', ms=10, label="p-value-%0.4f" % pvalue[5])
+
+ax1.set_xticklabels(['', r'$l_{4}$', r'$l_{5}$', r'$l_{6}$', r'$l_{7}$', r'$l_{8}$', r'$l_{9}$'],
+                     weight='extra bold', fontsize='x-large')
+
+for partname in ('cbars', 'cmins', 'cmaxes', 'cmedians'):
+    vp = violin_parts[partname]
+    vp.set_edgecolor('k')
+    vp.set_linewidth(2)
+for vp in violin_parts['bodies']:
+    vp.set_facecolor('#C71585')
+    vp.set_edgecolor('k')
+    vp.set_linewidth(1)
+    vp.set_alpha(0.7)
+plt.legend()
+plt.minorticks_on()
+"""
+
+
+
+
+
+
+

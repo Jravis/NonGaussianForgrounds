@@ -102,7 +102,7 @@ if Key == '200K' or Key=='100K' or Key =='50K':
     nbin = len(index)
 else:
     index = np.logspace(np.log10(11), np.log10(250), nbin, endpoint=True, dtype=np.int32)
-
+print index
 
 bin_arr = np.zeros((nbin - 1, 2), dtype=np.int32)
 

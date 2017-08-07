@@ -126,7 +126,9 @@ for i in xrange(0, nbin):
 
         alm_true = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
 
-        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est, verbose=False)*2.7255
+        esti_map[i, :] = hp.sphtfunc.alm2map(alm_true, nside_f_est,
+                                            pixwin=True,
+                                            verbose=False)*2.7255
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Bispectrum Analysis
@@ -140,8 +142,6 @@ with open(file_name, 'w') as f:
         for j in xrange(i, nbin-1):
             for k in xrange(j, nbin-1):
 
-                #if np.min(bin_arr[k]) - np.max(bin_arr[j]) <= np.max(bin_arr[i]) <=
-                # np.max(bin_arr[k]) + np.max(bin_arr[j]):
 
                 bis = summation(esti_map[i, :], esti_map[j, :], esti_map[k, :], npix)
 

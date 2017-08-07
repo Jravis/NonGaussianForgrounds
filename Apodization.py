@@ -6,6 +6,9 @@ import os
 import numpy as np
 import healpy as hp
 import sys
+sys.path.insert(0, '/home/sandeep/software/PolSpice_v03-03-02/src/')
+import ispice
+
 import ephem
 import matplotlib.pyplot as plt
 import getopt
@@ -123,7 +126,7 @@ def convertMapToJ2000(map):
     return map2
 
 
-def getMapValue(map, ra, dec):
+def getMapValue(map, ra, dec, theta):
     """
     Given a HEALPix map and a right ascension/declianation pair, return
     the map value at that point.  Use the 'fhwm' keyword to provide the
@@ -134,7 +137,8 @@ def getMapValue(map, ra, dec):
     # Extract the region around the source
     vec = hp.pixelfunc.ang2vec(np.pi / 2 - np.deg2rad(dec) , np.deg2rad(ra))
     vec = np.array(vec)
-    innerPixels = hp.query_disc(nSide, vec, radius=np.radians(1.5*56./60.))
+    #innerPixels = hp.query_disc(nSide, vec, radius=np.radians(1.5*56./60.))
+    innerPixels = hp.query_disc(nSide, vec, radius=np.radians(theta))
     return innerPixels
 
 
@@ -147,9 +151,9 @@ def masking_map(map1, nside, npix, limit, Galcut):
     mask = np.ones(hp.nside2npix(nside), dtype=np.float64)
     #mask = np.zeros(hp.nside2npix(nside), dtype=np.double)
     area = hp.pixelfunc.nside2pixarea(nside, degrees=False)
-
+    
     for ipix in xrange(0, npix):
-        temp = map1[ipix]*area
+        temp = map1[ipix]#*area
         if temp > limit:
             mask[ipix] = 0.0
 
@@ -158,9 +162,24 @@ def masking_map(map1, nside, npix, limit, Galcut):
             theta1, phi = hp.pixelfunc.pix2ang(nside, ipix)
             if 70. <= np.degrees(theta1) <= 110.:
                 mask[ipix] = 0.0
+    
+        inner_pix = getMapValue(map1,329.6, 17.5, 54.0)
+        outer_pix = getMapValue(map1,329.6, 17.5, 62.0)
+        index = np.setdiff1d(outer_pix, inner_pix)
+        index1 = []
+        for ipix1 in  index:
+            theta, phi = hp.pixelfunc.pix2ang(nside, ipix1)
+            if np.degrees(theta) < 90.0:
+                if 0.0 < np.degrees(phi)< 60.0:
+                    index1.append(ipix1)
+                if 330.0 < np.degrees(phi)< 360.0:
+                    index1.append(ipix1)
 
-    print 'Done'
+        index1=np.asarray(index1)
+        mask[index1]=0.0
 
+
+    """
     Cyg_A = getMapValue(map1, 23.39055556, 58.80000000)
     mask[Cyg_A] = 0.0
     Cas_A = getMapValue(map1, 19.99122222, 40.73388889)
@@ -226,83 +245,70 @@ def masking_map(map1, nside, npix, limit, Galcut):
         mask[indx_N] = 0.0
         indx_S = getMapValue(map1, dataS[i, 0], dataS[i, 1])
         mask[indx_S] = 0.0
-
+    """
     return mask
 
 
 def apodiz(mask, theta):
     apodiz_mask = hp.sphtfunc.smoothing(mask, fwhm=np.radians(theta))
-    index = (apodiz_mask < 0)
+    index = (apodiz_mask < 0.0)
     apodiz_mask[index] = 0.000
+
     return apodiz_mask
 
+
+
+#=====================================================================
 
 def main(fname, NSIDE):
 
     input_map = loadMap(fname)
     NPIX = hp.pixelfunc.nside2npix(NSIDE)
-
-    key = ['200K', '100K', '50K', '30K', '25K']
-    arr = [0.0002553, 0.00035, 0.000162, 0.000122, 0.000101]
+    #upgrade_map = hp.pixelfunc.ud_grade(input_map, nside_out=128)
+    
+    key = ['90K', '200K','50K','30K', '25K']
+    #arr = [38.35, 45.3, 24.05,19.8]# 25] 5deg
+    arr = [70, 64, 40,31.0, 25] #2 deg
     clr = ['g', 'orange', 'crimson', 'b', 'k']
 
     count = 0
-
     for LIMIT in arr:
         if key[count] == '200K':
             galCut ='N'
         else:
             galCut = 'Y'
-
+    
         Binary_mask = masking_map(input_map, NSIDE, NPIX, LIMIT, galCut)
-        theta_ap = 2.0
 
+        theta_ap = 2.0
         imp_map = apodiz(Binary_mask, theta_ap)
         masked_map = input_map*imp_map
 
-        print max(masked_map)
-        print masked_map
-
-        f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % (key[count],
-                                                                                                             theta_ap)
+        f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.fits" % (key[count],theta_ap)
         hp.fitsfunc.write_map(f_name, imp_map)
+        f_name1 = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.fits" % (key[count],theta_ap)
+        hp.fitsfunc.write_map(f_name1, masked_map)
 
-        f_name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.fits" % (key[count],
-                                                                                                     theta_ap)
-        hp.fitsfunc.write_map(f_name, masked_map)
+        f_name2 ="/dataspace/sandeep/Bispectrum_data/Input_Maps/PolSpice_data/cl_%s_%0.1fdeg_apodi.fits" % (key[count],theta_ap)
 
-#        print 'Enter the Lmax value you want for cl(APS) computation'
-#        LMAX = int(raw_input(''))
+        ispice.ispice(f_name1, f_name2, nlmax=3*NSIDE-1, weightfile1=f_name,
+                      thetamax=140.,apodizesigma=1.15*140.,apodizetype=1,beam1=56.,label="spice")
 
-        LMAX = 250
-
-        l = np.arange(0, LMAX+1)
-
-        cl = hp.sphtfunc.anafast(masked_map, lmax=LMAX)
-        print count
+    #ispice.ispice('map.fits','cls_tmp.fits', nlmax=3*512-1,beam1=56.,label="spice")
+    #window_func = hp.sphtfunc.pixwin(512, pol=False)
+    #beam = hp.sphtfunc.gauss_beam(np.radians(56./60), lmax=3*512-1, pol=False)
+    #spice_cl1= beam**2*hp.fitsfunc.read_cl('cls_tmp.fits')*window_func[0: 3*512]
+       
         hp.mollview(imp_map, xsize=2000, coord=['G'], unit=r'$T_{B}(K)$', nest=False, title='%s' % key[count])
-
         name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/ApodizeBinaryMask_%s_%0.1fdeg_apodi.pdf" % (key[count], theta_ap)
-        plt.savefig(name, dpi=1200)
+        plt.savefig(name, dpi=300)
 
         hp.mollview(masked_map, xsize=2000, coord=['G'], unit=r'$T_{B}(K)$', nest=False, title='408 MHz,%s' % key[count])
         name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.pdf" % (key[count], theta_ap)
-        plt.savefig(name, dpi=1200)
+        plt.savefig(name, dpi=300)
 
-        fig = plt.figure(8, figsize=(7, 7))
-        plt.plot(l, l * (l + 1) * cl, '-', color=clr[count], linewidth=2, label='%s' % key[count])
-        plt.yscale("log")
-        plt.xscale("log")
-        plt.grid(which='both')
-        plt.legend()
-        plt.xlabel(r'$l$', fontsize='x-large', fontstyle='italic', weight='extra bold')
-        plt.ylabel(r'$l(l+1)C_{l}$', fontsize='x-large', fontstyle='italic', weight='extra bold')
-        plt.minorticks_on()
-        plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=14)
-        plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=14)
-        count += 1
+        count+=1
 
-    fig.savefig("/dataspace/sandeep/Bispectrum_data/Input_Maps/AllCl.pdf", dpi=1200)
 
 if __name__ == "__main__":
 

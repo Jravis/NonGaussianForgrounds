@@ -1,7 +1,6 @@
 """
-This is a Python code for Bispectrum on any scalar(Temprature only) map 
-we use Binned bispectrum estimator Bucher et. al. 2010 and
-arXiv:1509.08107v2, 
+This code is to compute Linear correction term for Bispectrum to 
+take care of beam effect.
 """
 
 import numpy as np 
@@ -11,9 +10,11 @@ import pywigxjpf as wig
 from numba import njit
 import _countTriplet
 
-name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
+name = '/dataspace/sandeep/Bispectrum_data/haslam408_dsds_Remazeilles2014.fits'
 print name
 Haslam_512 = hp.fitsfunc.read_map(name)
+lmax = 256
+
 
 #@njit()
 def count_triplet(bin_1, bin_2, bin_3):
@@ -49,7 +50,7 @@ def g(l1, l2, l3):
 
 
 @njit()
-def summation(arr1, arr2, arr3, frac_sky):
+def summation(arr1, arr2, f_sky):
     """
     :param arr1:
     :param arr2:
@@ -58,13 +59,46 @@ def summation(arr1, arr2, arr3, frac_sky):
     :param num_pix:
     :return:
     """
-    bi_sum = 0.0
-    foo = np.multiply(arr1, arr2)
+    bi_sum = np.sum(np.multiply( arr1, arr2))
 
-    bi_sum = np.sum(np.multiply(foo, arr3))
-    bi_sum /= (4.0*np.pi*frac_sky)
-
+    bi_sum /= (4.0*np.pi*f_sky)
     return bi_sum
+
+def Gauss_Avg(loop1, BinJ, BinK, Apo_map, gal_mask, ns):
+
+    Gauss_esti_map = np.zeros((1000, npix), dtype=np.double)
+
+    window_func_J = np.zeros(lmax, float)
+    for j in xrange(BinJ[0], BinJ[1]):
+        window_func[j] = 1.0
+    
+    window_func_K = np.zeros(lmax, float)
+    for j in xrange(BinK[0], BinK[1]):
+        window_func[j] = 1.0
+
+    for fn in xrange(0, 1000):
+
+        s1 = '/dataspace/sandeep/Bispectrum_data'
+        s2 = '/Gaussian_%s_test/Gaussian_%s_Maps/haslam_%sgaussMap_%d.fits'% (loop1, loop1, loop1, fn)
+
+        filename = s1+s2
+        Gauss_map = hp.fitsfunc.read_map(filename)*gal_mask
+        alm_obs = hp.sphtfunc.map2alm(Gauss_map, lmax=lmax, iter=3)
+            
+        alm_obs_J = hp.sphtfunc.almxfl(alm_obs, window_func_J, mmax=None, inplace=True)
+        test_map_J = hp.sphtfunc.alm2map(alm_obs_J, ns, verbose=False)
+
+        alm_obs_K = hp.sphtfunc.almxfl(alm_obs, window_func_K, mmax=None, inplace=True)
+        test_map_K = hp.sphtfunc.alm2map(alm_obs_K, ns, verbose=False)
+
+        a = test_map_J*Apo_mask
+        b = test_map_K*Apo_mask
+        Gauss_esti_map[fn, :] = np.multiply(a,b)
+
+    mean = np.mean(Gauss_esti_map, axis=0)
+
+    return mean
+
 
 
 def bispec_estimator(nside_f_est, loop, apod_mask):
@@ -75,24 +109,21 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
     :return:
     """
 
-    # Masking and apodization
+# Masking and apodization
 
     npix = hp.nside2npix(nside_f_est)
     Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
 
-    haslam = Haslam_128 * ap_map # Galactic mask to reduce leakage for low temprature map 
+    haslam = Haslam_128 * gal_cut_mask
 
 
-    # using Logrithmic bins
-    lmax = 256
     nbin = 11
-
     index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
     ind = (index!=11)
     index=index[ind]
-    print index
-    esti_map = np.zeros((nbin, npix), dtype=np.double)
 
+    # using Logrithmic bins
+    esti_map = np.zeros((nbin, npix), dtype=np.double)
     bin_arr = np.zeros((nbin - 1, 2), dtype=np.int32)
 
     for i in xrange(0, nbin):
@@ -104,16 +135,18 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
             bin_arr[i, 0] = ini
             bin_arr[i, 1] = final - 1
 
-            for j in xrange(ini, final):  # Summing over all l in a given bin we are using top-hat filter
-                window_func[j] = 1.0      # will use smoothing technique to stop ripple
+            for j in xrange(ini, final):  # Summing over all l in a given bin
+                window_func[j] = 1.0
+
 
             alm_obs = hp.sphtfunc.almxfl(alm_obs, window_func, mmax=None, inplace=True)
             test_map = hp.sphtfunc.alm2map(alm_obs, nside_f_est, verbose=False)
-            
             esti_map[i, :] = test_map*apod_mask
 
 
-    npix = np.sum(apod_mask)
+    frac_sky = np.sum(apod_mask)
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_%s_test/'% (loop)
     s2 = 'All_mode/Analysis_Bin_Bispectrum_%d_%s.txt' % (nside_f_est, loop)
 
@@ -123,20 +156,15 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
     with open(file_name, 'w') as f:
 
         f.write("Bis\tI1\tI2\tI3\tcount\n")
-
-        #we will have l3>=l2>=l1 scheme
-        
         for I1 in xrange(0, nbin - 1):
             for I2 in xrange(I1, nbin-1):
                 for I3 in xrange(I2, nbin-1):
-
-                    bis = summation(esti_map[I1, :], esti_map[I2, :], esti_map[I3, :], , npix)
                    
-#                   trip_count = count_triplet(bin_arr[I1, :], bin_arr[I2, :], bin_arr[I3, :])
-#                    trip_count = _countTriplet.countTriplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
-                    #f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
+                    foo = [bin_arr[I2, 0], bin_arr[I2, 1]+1]
+                    bar = [bin_arr[I3, 0], bin_arr[I3, 1]+1]
 
-# If considering all mode
+                    bis1 = summation(esti_map[I1, :],Gauss_Avg(loop, foo, bar,
+                                    apod_mask,gal_cut_mask, nside_f_est), frac_sky)
 
                     f.write("%0.6e\t%d\t%d\t%d\n" % (bis, I1, I2, I3))
 
@@ -150,7 +178,8 @@ if __name__ == "__main__":
     print f_name1
     ap_mask_128 = hp.fitsfunc.read_map(f_name1)
 
-    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP[0], ap_mask_128))
+    Cell_Count1 = Process(target=bispec_estimator, args=(NSIDE, TEMP[0],
+                          ap_mask_128))
     Cell_Count1.start()
     Cell_Count1.join()
 
