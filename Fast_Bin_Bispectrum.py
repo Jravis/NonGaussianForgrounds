@@ -131,25 +131,8 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
 
     file_name = s1+s2
     print file_name
+    Gauss_alm = gauss_almobs(loop, mask_128_80K)
 
-    with open(file_name, 'w') as f:
-
-        f.write("Bis\tI1\tI2\tI3\tcount\n")
-
-        # we will have l3>=l2>=l1 scheme
-
-        # If considering all mode
-
-        for I1 in xrange(0, nbin - 1):
-            for I2 in xrange(I1, nbin-1):
-                for I3 in xrange(I2, nbin-1):
-
-                    bis = summation(esti_map[I1, :], esti_map[I2, :], esti_map[I3, :], npix)
-                    f.write("%0.6e\t%d\t%d\t%d\n" % (bis, I1, I2, I3))
-
-#                   trip_count = count_triplet(bin_arr[I1, :], bin_arr[I2, :], bin_arr[I3, :])
-#                    trip_count = _countTriplet.countTriplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
-                    #f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
 
 
 if __name__ == "__main__":

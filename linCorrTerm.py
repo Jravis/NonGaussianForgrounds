@@ -18,6 +18,7 @@ lmax = 256
 
 #@njit()
 
+
 def count_triplet(bin_1, bin_2, bin_3):
     """
     This routine count number of valid l-triplet in a i-trplet bin
@@ -58,78 +59,79 @@ def summation(arr1, arr2, f_sky):
     return bi_sum
 
 
-def Gauss_Avg(loop1, BinJ, BinK, Apo_mask, sky_mask, ns):
-
-    Gauss_esti_map = np.zeros((1000, npix), dtype=np.double)
+def filter_arr(ini, final):
 
     delta_l = 2
-
-    window_func_J = np.zeros(lmax, float)
-
-    ini = BinJ[0]
-    final = BinJ[1]
+    window_func = np.zeros(lmax, float)
     for l in xrange(ini, final):
         if ini + delta_l <= l <= final - delta_l:
-            window_func_J[l] = 1.0
+            window_func[l] = 1.0
 
         elif ini <= l < ini + delta_l:
 
-            window_func_J[l] = np.cos(np.pi * 0.5 * ((ini + delta_l) - l) / delta_l) ** 2
+            window_func[l] = np.cos(np.pi * 0.5 * ((ini + delta_l) - l) / delta_l) ** 2
 
         elif final - delta_l < l < final:
 
-            window_func_J[l] = 1.0 * np.cos(np.pi * 0.5 * (l - (final - delta_l)) / delta_l) ** 2
+            window_func[l] = 1.0 * np.cos(np.pi * 0.5 * (l - (final - delta_l)) / delta_l) ** 2
 
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    return window_func
 
-    window_func_K = np.zeros(lmax, float)
-    ini = BinK[0]
-    final = BinK[1]
-    for l in xrange(ini, final):
-        if ini + delta_l <= l <= final - delta_l:
-            window_func_K[l] = 1.0
 
-        elif ini <= l < ini + delta_l:
+def gauss_almobs(loop1, sky_mask):
 
-            window_func_K[l] = np.cos(np.pi * 0.5 * ((ini + delta_l) - l) / delta_l) ** 2
-
-        elif final - delta_l < l < final:
-
-            window_func_K[l] = 1.0 * np.cos(np.pi * 0.5 * (l - (final - delta_l)) / delta_l) ** 2
-
+    alm_obs_Gauss =[]# np.zeros((1000, 33153), dtype=np.float64)
     for fn in xrange(0, 1000):
 
         s1 = '/dataspace/sandeep/Bispectrum_data'
         s2 = '/Gaussian_%s_test/Gaussian_%s_Maps/haslam_%sgaussMap_%d.fits' % (loop1, loop1, loop1, fn)
 
         filename = s1+s2
-        Gauss_map = hp.fitsfunc.read_map(filename)*sky_mask
-        alm_obs = hp.sphtfunc.map2alm(Gauss_map, lmax=lmax, iter=3)
-            
-        alm_obs_J = hp.sphtfunc.almxfl(alm_obs, window_func_J, mmax=None, inplace=True)
+        Gauss_map = hp.fitsfunc.read_map(filename, verbose=False)*sky_mask
+        alm_obs_Gauss.append(hp.sphtfunc.map2alm(Gauss_map, lmax=lmax, iter=3))
+
+    return alm_obs_Gauss
+
+
+def Gauss_Avg(BinI,  BinJ, BinK, Apo_mask, gauss_alm, ns):
+
+    Gauss_esti_map_I = np.zeros((1000, npix), dtype=np.double)
+    Gauss_esti_map_J = np.zeros((1000, npix), dtype=np.double)
+    Gauss_esti_map_K = np.zeros((1000, npix), dtype=np.double)
+
+    window_func_I = filter_arr(BinI[0], BinI[1])
+    window_func_J = filter_arr(BinJ[0], BinJ[1])
+    window_func_K = filter_arr(BinK[0], BinK[1])
+
+    for i in xrange(0, 1000):
+
+        alm_obs_I = hp.sphtfunc.almxfl(gauss_alm[i], window_func_I, mmax=None, inplace=True)
+        test_map_I = hp.sphtfunc.alm2map(alm_obs_I, ns, verbose=False)
+
+        alm_obs_J = hp.sphtfunc.almxfl(gauss_alm[i], window_func_J, mmax=None, inplace=True)
         test_map_J = hp.sphtfunc.alm2map(alm_obs_J, ns, verbose=False)
 
-        alm_obs_K = hp.sphtfunc.almxfl(alm_obs, window_func_K, mmax=None, inplace=True)
+        alm_obs_K = hp.sphtfunc.almxfl(gauss_alm[i], window_func_K, mmax=None, inplace=True)
         test_map_K = hp.sphtfunc.alm2map(alm_obs_K, ns, verbose=False)
 
-        a = test_map_J*Apo_mask
-        b = test_map_K*Apo_mask
-        Gauss_esti_map[fn, :] = np.multiply(a, b)
+        a = test_map_I*Apo_mask
+        b = test_map_J*Apo_mask
+        c = test_map_K*Apo_mask
 
-    mean = np.mean(Gauss_esti_map, axis=0)
+        Gauss_esti_map_I[i, :] = np.multiply(a, b)
+        Gauss_esti_map_J[i, :] = np.multiply(b, c)
+        Gauss_esti_map_K[i, :] = np.multiply(a, c)
 
-    return mean
+    meanI = np.mean(Gauss_esti_map_I, axis=0)
+    meanJ = np.mean(Gauss_esti_map_J, axis=0)
+    meanK = np.mean(Gauss_esti_map_K, axis=0)
+
+    return meanI,  meanJ, meanK
 
 
 def bispec_estimator(nside_f_est, loop, apod_mask):
-    """
-    :param nside_f_est:
-    :param loop:
-    :param limit:
-    :return:
-    """
 
-# Masking and apodization
+    # Masking and apodization
 
     Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
 
@@ -143,6 +145,7 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
     index = index[ind]
 
     # using Logrithmic bins
+
     delta_l = 2.
     esti_map = np.zeros((nbin, npix), dtype=np.double)
     bin_arr = np.zeros((nbin - 1, 2), dtype=np.int32)
@@ -178,6 +181,9 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
             esti_map[i, :] = test_map*apod_mask
     frac_sky = np.sum(apod_mask)
 
+    Gauss_alm = gauss_almobs(loop, mask_128_80K)
+
+
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_%s_test/' % loop
@@ -193,28 +199,24 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
             for I2 in xrange(I1, nbin-1):
                 for I3 in xrange(I2, nbin-1):
                    
-                    foo = [bin_arr[I2, 0], bin_arr[I2, 1]+1]
-                    bar = [bin_arr[I3, 0], bin_arr[I3, 1]+1]
-                    Avg_arr1 = Gauss_Avg(loop, foo, bar, apod_mask, mask_128_80K, nside_f_est)
-                    bis1 = summation(esti_map[I1, :], Avg_arr1, frac_sky)
-
-                    foo = [bin_arr[I1, 0], bin_arr[I1, 1]+1]
-                    bar = [bin_arr[I3, 0], bin_arr[I3, 1]+1]
-                    Avg_arr2 = Gauss_Avg(loop, foo, bar, apod_mask, mask_128_80K, nside_f_est)
-                    bis2 = summation(esti_map[I2, :], Avg_arr2, frac_sky)
-
                     foo = [bin_arr[I1, 0], bin_arr[I1, 1]+1]
                     bar = [bin_arr[I2, 0], bin_arr[I2, 1]+1]
-                    Avg_arr3 = Gauss_Avg(loop, foo, bar, apod_mask, mask_128_80K, nside_f_est)
-                    bis3 = summation(esti_map[I3, :], Avg_arr3, frac_sky)
+                    yo = [bin_arr[I3, 0], bin_arr[I3, 1]+1]
+                    Avg_arrI1, Avg_arrI2, Avg_arrI3 = Gauss_Avg(foo, bar, yo, apod_mask, Gauss_alm, nside_f_est)
+
+                    bis1 = summation(esti_map[I1, :], Avg_arrI2, frac_sky)
+                    bis2 = summation(esti_map[I2, :], Avg_arrI3, frac_sky)
+                    bis3 = summation(esti_map[I3, :], Avg_arrI1, frac_sky)
                     bis = bis1+bis2+bis3
+
                     f.write("%0.6e\t%d\t%d\t%d\n" % (bis, I1, I2, I3))
 
 
 if __name__ == "__main__":
 
     NSIDE = 128
-    TEMP = ['30K', '40K', '50K', '60K']
+    #TEMP = ['30K', '40K', '50K', '60K']
+    TEMP = ['40K', '50K', '60K']
     min_core = 1
     max_core = 4
     strn = []
@@ -223,7 +225,7 @@ if __name__ == "__main__":
         strn.append(s)
     print len(TEMP), len(strn)
 
-    for i in xrange(len(strn)):
+    for i in xrange(0, 3):#len(strn)):
         f_name1 = "/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_apod_128/Mask_%s_apod_300arcm_ns_128.fits" % TEMP[i]
         print f_name1
         ap_mask_128 = hp.fitsfunc.read_map(f_name1)
@@ -231,5 +233,5 @@ if __name__ == "__main__":
         strn[i] = Process(target=bispec_estimator, args=(NSIDE, TEMP[i], ap_mask_128))
         strn[i].start()
 
-    for i in xrange(len(strn)):
+    for i in xrange(0, 1):#len(strn)):
         strn[i].join()

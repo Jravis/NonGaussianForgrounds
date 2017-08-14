@@ -53,10 +53,11 @@ def summation(arr1, arr2, arr3, frac_sky):
     return bi_sum
 
 
-def bispec_estimator(nside_f_est, loop, apod_mask, nmin, nmax):
+def bispec_estimator(loop, apod_mask, nmin, nmax):
 
-    npix = hp.nside2npix(nside_f_est)
-    print npix
+    NSIDE = 128
+    npix = hp.nside2npix(NSIDE)
+
     name = '/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_apod_128/Mask_80K_apod_300arcm_ns_128.fits'
     mask_128_80K = hp.fitsfunc.read_map(name)
 
@@ -66,12 +67,11 @@ def bispec_estimator(nside_f_est, loop, apod_mask, nmin, nmax):
         s2 = '/Gaussian_%s_test/Gaussian_%s_Maps/haslam_%sgaussMap_%d.fits' % (loop, loop, loop, fn)
 
         filename = s1+s2
-        Haslam_128 = hp.fitsfunc.read_map(filename)
+
+        Haslam_128 = hp.fitsfunc.read_map(filename, verbose=False)
 
         haslam = Haslam_128 * mask_128_80K  # Galactic mask to reduce leakage for low temprature map
-
         # using Logrithmic bins
-
         lmax = 256
         nbin = 11
 
@@ -113,10 +113,10 @@ def bispec_estimator(nside_f_est, loop, apod_mask, nmin, nmax):
                 test_map = hp.sphtfunc.alm2map(alm_test, 128, verbose=False)
                 esti_map[i, :] = test_map * apod_mask
 
-        npix = np.sum(apod_mask)
+        f_sky = np.sum(apod_mask)
 
         s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_%s_test/Gaussian_Bin_Bispectrum/' % loop
-        s2 = 'BinnedBispectrum_Bin_GaussianMaps_%d_%s_%d.txt' % (nside_f_est, loop, fn)
+        s2 = 'BinnedBispectrum_Bin_GaussianMaps_%d_%s_%d.txt' % (NSIDE, loop, fn)
         file_name = s1+s2
 
         with open(file_name, 'w') as f:
@@ -128,15 +128,14 @@ def bispec_estimator(nside_f_est, loop, apod_mask, nmin, nmax):
                 for I2 in xrange(I1, nbin - 1):
                     for I3 in xrange(I2, nbin - 1):
 
-                        bis = summation(esti_map[I1, :], esti_map[I2, :], esti_map[I3, :], npix)
+                        bis = summation(esti_map[I1, :], esti_map[I2, :], esti_map[I3, :], f_sky)
                         f.write("%0.6e\t%d\t%d\t%d\n" % (bis, I1, I2, I3))
                         #trip_count = _countTriplet.countTriplet(bin_arr[i, :], bin_arr[j, :], bin_arr[k, :])
                         #f.write("%0.6e\t%d\t%d\t%d\t%d\n" % (bis, i, j, k, trip_count))
-                        
+
 
 if __name__ == "__main__":
 
-    NSIDE = 128
     nmin = 0
     nmax = 0
     count = 0
@@ -144,24 +143,21 @@ if __name__ == "__main__":
     max_core = 20
     increment = 50
     str = []
-    TEMP = ['30K']#,'30K', '40K', '50K', '60K']
+    TEMP = ['60K']#,'30K', '40K', '50K', '60K']
 
     for i in xrange(1, max_core + 1):
         s = 'Cell_Count%d' % i
         str.append(s)
-    print len(str)
 
     for i in xrange(len(str)):
 
         f_name1 = "/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_apod_128/Mask_%s_apod_300arcm_ns_128.fits" % TEMP[0]
-        print f_name1
-        ap_mask_128 = hp.fitsfunc.read_map(f_name1)
+        ap_mask_128 = hp.fitsfunc.read_map(f_name1, verbose=False)
         nmin = count
         nmax = count + increment
         if nmax == 1000:
             nmax = 1001
-        print nmin, nmax, i
-        str[i] = Process(target=bispec_estimator, args=(NSIDE, TEMP[0], ap_mask_128, nmin, nmax))
+        str[i] = Process(target=bispec_estimator, args=(TEMP[0], ap_mask_128, nmin, nmax))
         str[i].start()
         count = nmax
 
