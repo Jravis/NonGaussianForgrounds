@@ -9,6 +9,7 @@ from scipy import stats
 name = '/home/sandeep/Parllel_Heslam/haslam408_dsds_Remazeilles2014.fits'
 Haslam_512 = hp.fitsfunc.read_map(name)
 Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
+
 nside_f_est = 128
 f_name ='/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_binary_128/Mask_30K_binary_ns_128.fits'
 ap_map = hp.fitsfunc.read_map(f_name, verbose=False)
@@ -18,8 +19,8 @@ haslam = Haslam_128 * ap_map
 lmax = 256
 nbin = 11
 index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
-ind = (index!=11)
-index=index[ind]
+ind = (index != 11)
+index = index[ind]
 
 bin_arr = [[] for i in range(11)]
 bin_arr1 = np.zeros((nbin-1, 2), dtype=int)
@@ -32,10 +33,10 @@ for i in xrange(0, nbin):
             bin_arr1[i, 0] = ini
             bin_arr1[i, 1] = final+tmp
             bin_arr[i].append(range(ini, final+tmp))
-            index[i+1]=final+tmp
+            index[i+1] = final+tmp
         else:
-            bin_arr1[i, 0]=ini
-            bin_arr1[i, 1]=final
+            bin_arr1[i, 0] = ini
+            bin_arr1[i, 1] = final
             bin_arr[i].append(range(ini, final))
 
 print bin_arr1
@@ -70,7 +71,6 @@ for i in xrange(0, nbin-1):
 
     #real_alm, real_bin_edges = np.histogram(almr, bins='auto')
     #imag_alm, imag_bin_edges = np.histogram(almi, bins='auto')
-
 
     skewr_actual.append(stats.skew(almr, axis=0, bias=True))
 

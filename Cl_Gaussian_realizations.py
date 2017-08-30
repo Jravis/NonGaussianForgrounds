@@ -16,7 +16,7 @@ def gaussian_maps(nmin, nmax):
     :return:
     """
 
-    key = ['50K']#, 30'40K', '50K', '60K']
+    key = ['30K']#, 30'40K', '50K', '60K']
 
     f_name = "/dataspace/sandeep/Bispectrum_data/haslam408_dsds_Remazeilles2014.fits"
 
@@ -58,7 +58,7 @@ def gaussian_maps(nmin, nmax):
         # Creating Gaussian maps of Nside 128 using PolSpice Cl smoothed with beam of 30 arcmin
 
         Map_128 = hp.sphtfunc.synfast(PolSpi_cl, NSIDE_128,
-                                      lmax=3*NSIDE_128-1,pixwin=True,
+                                      lmax=3*NSIDE_128-1, pixwin=True,
                                       fwhm=np.radians(30.0/60.), verbose=False)
 
         Map1 = Map_128*ap_map_128  # no masking gaussian map

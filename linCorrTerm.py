@@ -215,8 +215,7 @@ def bispec_estimator(nside_f_est, loop, apod_mask):
 if __name__ == "__main__":
 
     NSIDE = 128
-    #TEMP = ['30K', '40K', '50K', '60K']
-    TEMP = ['40K', '50K', '60K']
+    TEMP = ['30K', '40K', '50K', '60K']
     min_core = 1
     max_core = 4
     strn = []
@@ -225,7 +224,7 @@ if __name__ == "__main__":
         strn.append(s)
     print len(TEMP), len(strn)
 
-    for i in xrange(0, 3):#len(strn)):
+    for i in xrange(len(strn)):
         f_name1 = "/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_apod_128/Mask_%s_apod_300arcm_ns_128.fits" % TEMP[i]
         print f_name1
         ap_mask_128 = hp.fitsfunc.read_map(f_name1)
@@ -233,5 +232,5 @@ if __name__ == "__main__":
         strn[i] = Process(target=bispec_estimator, args=(NSIDE, TEMP[i], ap_mask_128))
         strn[i].start()
 
-    for i in xrange(0, 1):#len(strn)):
+    for i in xrange(len(strn)):
         strn[i].join()

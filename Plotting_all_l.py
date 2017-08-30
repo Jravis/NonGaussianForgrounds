@@ -6,9 +6,9 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
 lmax = 250
 
-s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/'
-#s2 = 'Analysis_25KBin_Bispectrum_512_25.txt'
-s2 = 'Analysis_25K_NewBin_Bispectrum_512_25.txt'
+
+s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_60K_test/'
+s2 = 'All_mode/Analysis_Bin_Bispectrum_128_60K.txt'
 
 
 name = s1+s2
@@ -112,7 +112,6 @@ for i in xrange(0, nbin):
         final = index[i + 1]
         bin_arr[i, 0] = ini
         bin_arr[i, 1] = final - 1
-
 
 
 cmap = plt.cm.viridis
