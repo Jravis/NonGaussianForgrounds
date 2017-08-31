@@ -307,7 +307,7 @@ def main(fname, NSIDE):
         name = "/dataspace/sandeep/Bispectrum_data/Input_Maps/MaskedMap_%s_%0.1fdeg_apodi.pdf" % (key[count], theta_ap)
         plt.savefig(name, dpi=300)
 
-        count+=1
+        count += 1
 
 
 if __name__ == "__main__":
