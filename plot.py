@@ -11,7 +11,7 @@ Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+"""
 name = '/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_apod_128/Mask_80K_apod_300arcm_ns_128.fits'
 mask_80K = hp.fitsfunc.read_map(name, verbose=False)
 haslam = Haslam_128 * mask_80K
@@ -59,7 +59,7 @@ haslam = Haslam_128 * mask_30K
 hp.mollview(haslam, xsize=2000, unit=r'$T_{B}(K)$', nest=False, title='%s' % '30K')
 name = '/dataspace/sandeep/Bispectrum_data/Input_Maps/maps_128/Map_30K_apod_300arcm_ns_128.png'
 plt.savefig(name, dpi=600)
-
+"""
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 key = ['60K', '50K', '40K', '30K']
@@ -71,9 +71,17 @@ for i in xrange(len(key)):
     ap_map_128 = hp.fitsfunc.read_map(f_name1)
     sky_sum.append(np.sum(ap_map_128))
 
-nbin = 11
-index = np.logspace(np.log10(10), np.log10(256), 11, endpoint=True, dtype=np.int32)
-bin_arr = np.zeros((11 - 1, 2), dtype=np.int32)
+#nbin = 11
+#index = np.logspace(np.log10(10), np.log10(256), 11, endpoint=True, dtype=np.int32)
+# *****************************************************************
+# for 15 bin scheme
+
+index = [10, 19, 27, 39, 46, 55, 65, 77, 91, 109, 129, 153, 181, 215, 256]
+index = np.asarray(index, dtype=np.int32)
+nbin = len(index)
+
+print nbin
+bin_arr = np.zeros((nbin - 1, 2), dtype=np.int32)
 npix = hp.nside2npix(128)
 
 frac_sky = np.asarray(sky_sum, dtype=np.float64)/npix
@@ -81,7 +89,7 @@ print frac_sky
 
 for i in xrange(0, nbin-1):
     ini = index[i]
-    if i+1 < 11:
+    if i+1 < nbin:
         final = index[i+1]
         if ini+5 > final:
             bin_arr[i, 0] = ini
@@ -136,8 +144,10 @@ for fn in key:
 #wl = hp.sphtfunc.pixwin(128, pol=False)
 
 
-I = np.arange(1, nbin)
-
+I = np.arange(nbin-1)
+I = np.add(I, 1)
+print ""
+print I
 fig = plt.figure(6, figsize=(10, 8))
 gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1], hspace=0.02, wspace=0.3)
 
@@ -158,7 +168,7 @@ plt.ylabel(r'$C_{I}$', fontsize='large', fontstyle='italic', weight='extra bold'
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 ax1.text(4, 450., r'$\mathbf{T_{Cut}:}$ 60K, '
                  r'$\mathbf{f_{sky}:}$ '
                  ' %0.1f %%' % (frac_sky[0]*100),
@@ -175,7 +185,7 @@ plt.ylabel(r'$\Delta$', fontsize='large', fontstyle='italic', weight='extra bold
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 plt.ylim(-1.0, 1.0)
 
 
@@ -189,7 +199,7 @@ plt.ylabel(r'$C_{I}$', fontsize='large', fontstyle='italic', weight='extra bold'
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 ax3.text(4.0, 450, r'$\mathbf{T_{Cut}:}$ 50K, '
                  r'$\mathbf{f_{sky}:}$ '
                  ' %0.1f %%' % (frac_sky[1]*100),
@@ -205,10 +215,10 @@ plt.ylabel(r'$\Delta$', fontsize='large', fontstyle='italic', weight='extra bold
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 plt.ylim(-1.0, 1.0)
 
-fig.savefig("/dataspace/sandeep/Bispectrum_data/BinnedCl_1000sim_1.png", dpi=600)
+fig.savefig("/dataspace/sandeep/Bispectrum_data/BinnedCl_1000sim_1_nbin-15.png", dpi=600)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
 
 fig = plt.figure(7, figsize=(10, 8))
@@ -224,7 +234,7 @@ plt.ylabel(r'$C_{I}$', fontsize='large', fontstyle='italic', weight='extra bold'
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 ax5.text(4.0, 450, r'$\mathbf{T_{Cut}:}$ 40K, '
                  r'$\mathbf{f_{sky}:}$ '
                  ' %0.1f %%' % (frac_sky[2]*100),
@@ -240,7 +250,7 @@ plt.ylabel(r'$\Delta$', fontsize='large', fontstyle='italic', weight='extra bold
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 plt.ylim(-1.0, 1.0)
 
 
@@ -254,7 +264,7 @@ plt.ylabel(r'$C_{I}$', fontsize='large', fontstyle='italic', weight='extra bold'
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 ax7.text(4.0, 450.0, r'$\mathbf{T_{Cut}:}$ 30K, '
                  r'$\mathbf{f_{sky}:}$ '
                  ' %0.1f %%' % (frac_sky[3]*100),
@@ -271,10 +281,10 @@ plt.ylabel(r'$\Delta$', fontsize='large', fontstyle='italic', weight='extra bold
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlim(0.9, 11)
+plt.xlim(0.9, 15)
 plt.ylim(-1.0, 1.0)
 
-fig.savefig("/dataspace/sandeep/Bispectrum_data/BinnedCl_1000sim_2.png", dpi=600)
+fig.savefig("/dataspace/sandeep/Bispectrum_data/BinnedCl_1000sim_2_nbin-15.png", dpi=600)
 
 """
 ax1 = plt.subplot(gs[0, 1])

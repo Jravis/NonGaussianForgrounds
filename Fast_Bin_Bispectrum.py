@@ -17,14 +17,29 @@ Haslam_512 = hp.fitsfunc.read_map(name)
 nside_f_est =128
 npix = hp.nside2npix(nside_f_est)
 lmax = 256
-nbin =11
-index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
-ind = (index != 11)
-index = index[ind]
-print index
 
+#nbin =11
+#index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
+#ind = (index != 11)
+#index = index[ind]
+#print index
+
+# *****************************************************************
+# for 15 bin scheme
+
+index = [10, 19, 27, 39, 46, 55, 65, 77, 91, 109, 129, 153, 181, 215, 256]
+index = np.asarray(index, dtype=np.int32)
+nbin = len(index)
+
+# *****************************************************************
+# for 20 bin scheme
+#index = [10, 15, 21, 27, 34, 42, 53, 59, 66, 74, 83, 93, 104, 117, 130, 146, 163, 183, 204, 256]
+#index = np.asarray(index, dtype=np.int32)
+#nbin = len(index)
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
 def count_triplet(bin_1, bin_2, bin_3):
     """
     This routine count number of valid l-triplet in a i-trplet bin

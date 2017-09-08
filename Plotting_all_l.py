@@ -7,8 +7,8 @@ from matplotlib.colors import LogNorm
 lmax = 250
 
 
-s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_60K_test/'
-s2 = 'All_mode/Analysis_Bin_Bispectrum_128_60K.txt'
+s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/'
+s2 = 'All_mode/Analysis_Bin_Bispectrum_128_50K.txt'
 
 
 name = s1+s2
@@ -65,8 +65,8 @@ esti_bis_1 = np.zeros((1000, len(Bis2)), dtype=np.float64)
 
 
 for ii in xrange(0, 1000):
-    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_60K_test/Gaussian_Bin_Bispectrum/'
-    s2 = 'BinnedBispectrum_Bin_GaussianMaps_linCorr_128_60K_%d.txt' % ii
+    s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/Gaussian_Bin_Bispectrum/'
+    s2 = 'BinnedBispectrum_Bin_GaussianMaps_linCorr_128_50K_%d.txt' % ii
 
     name = s1+s2
     data = ascii.read(name, guess=False, delimiter='\t')
@@ -146,45 +146,30 @@ Indx = 0
 Indxy = 0
 nn = 0
 
-fig = plt.figure(1, figsize=(10, 9))
-gs = gridspec.GridSpec(4, 4)
+fig = plt.figure(1, figsize=(12, 15))
+gs = gridspec.GridSpec(4, 4, hspace=0.5, wspace=0.6)
 #gs.update(wspace=0.025, hspace=0.05) # set the spacing between axes.
 for Indx in xrange(0, 3):
     for Indy in xrange(0, 3):
         a, b = plot_data(nn)
         ax1 = plt.subplot(gs[Indx, Indy])
         im = ax1.imshow(a, cmap=cmap, origin='lower', interpolation='none')
-        ax1.set_xlabel(r'$l_{1}$', fontsize=14)
-        ax1.set_ylabel(r'$l_{2}$', fontsize=14)
-        ax1.set_title(r'$l_{3}\in [%d, %d]$'%(b[0], b[1]))
-        #ax1.set_aspect('equal')
+        ax1.set_xlabel(r'$I_{1}$', fontsize=14)
+        ax1.set_ylabel(r'$I_{2}$', fontsize=14)
+        ax1.set_title(r'$I_{3}\in [%d, %d]$' % (b[0], b[1]))
+        ax1.set_aspect('equal')
         plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
-        nn+=1
-
-plt.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_New_Binnedplots_data-mean_stdDev_1.pdf", dpi=600)
-
-fig = plt.figure(2, figsize=(10, 9))
-gs = gridspec.GridSpec(4, 4)
-#gs.update(wspace=0.025, hspace=0.05) # set the spacing between axes.
-for Indx in xrange(0, 4):
-    for Indy in xrange(0, 4):
-        if nn< nbin-1:
-            a , b = plot_data(nn)
-            ax1 = plt.subplot(gs[Indx, Indy])
-            im = ax1.imshow(a, cmap=cmap, origin='lower', interpolation='none')
-            ax1.set_xlabel(r'$l_{1}$', fontsize=14)
-            ax1.set_ylabel(r'$l_{2}$', fontsize=14)
-            ax1.set_title(r'$l_{3}\in [%d, %d]$'%(b[0], b[1]))
-            #ax1.set_aspect('equal')
-            plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
-            nn+=1
-        else:
-            break
-
-
-plt.tight_layout()  # Or equivalently,  "plt.tight_layout()"
-#plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/25K_2d_New_Binnedplots_data-mean_stdDev_2.pdf", dpi=600)
+        nn += 1
+a, b = plot_data(nn)
+ax1 = plt.subplot(gs[3, 0])
+im = ax1.imshow(a, cmap=cmap, origin='lower', interpolation='none')
+ax1.set_xlabel(r'$I_{1}$', fontsize=14)
+ax1.set_ylabel(r'$I_{2}$', fontsize=14)
+ax1.set_title(r'$I_{3}\in [%d, %d]$' % (b[0], b[1]))
+ax1.set_aspect('equal')
+plt.colorbar(im,  spacing='proportional',  fraction=0.046, pad=0.04)
+#plt.tight_layout()  # Or equivalently,  "plt.tight_layout()"
+plt.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/plots/Allmode_2dplot_Bin_Bispectrum_nbin-11.png", dpi=600)
 
 
 plt.figure(3, figsize=(8, 6))
@@ -196,9 +181,9 @@ plt.legend()
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
 plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
-plt.xlabel(r"$l$", fontsize=18)
-plt.ylabel(r"$B_{lll}$", fontsize=18)
+plt.xlabel(r"$I$", fontsize=18)
+plt.ylabel(r"$B_{III}$", fontsize=18)
 #plt.xlim(6,)
 plt.yscale('symlog', linthreshy=0.001)
-#plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_25K_test/plots/NewBin_Bispectrum_lll_1.pdf', dpi=600)
+plt.savefig('/dataspace/sandeep/Bispectrum_data/Gaussian_50K_test/plots/Allmode_Bin_Bispectrum_lll_nbin-11.png', dpi=600)
 plt.show()

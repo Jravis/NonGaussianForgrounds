@@ -10,13 +10,18 @@ import _countTriplet
 #wig.wig_temp_init(1000)
 
 lmax = 256
-nbin = 11
+#nbin = 11
 NSIDE = 128
 npix = hp.nside2npix(NSIDE)
 
-index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
-ind = (index != 11)
-index = index[ind]
+#index = np.logspace(np.log10(10), np.log10(256), nbin, endpoint=True, dtype=np.int32)
+#ind = (index != 11)
+#index = index[ind]
+
+# for 15 bin scheme
+index = [10, 19, 27, 39, 46, 55, 65, 77, 91, 109, 129, 153, 181, 215, 256]
+index = np.asarray(index, dtype=np.int32)
+nbin = len(index)
 print index
 
 
@@ -151,7 +156,8 @@ def bispec_estimator(loop, G_alm, apod_mask, mask_128_80K, nmin, nmax):
         frac_sky = np.sum(apod_mask)
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_%s_test/Gaussian_Bin_Bispectrum/' % loop
+
+        s1 = '/dataspace/sandeep/Bispectrum_data/Gaussian_%s_test/Gaussian_Bin_Bispectrum_nbin-15/' % loop
         s2 = 'BinnedBispectrum_Bin_GaussianMaps_linCorr_%d_%s_%d.txt' % (NSIDE, loop, fn)
         file_name = s1 + s2
         print file_name
@@ -180,7 +186,7 @@ if __name__ == "__main__":
     max_core = 20
     increment = 50
     str = []
-    TEMP = ['30K']#,'30K', '40K', '50K', '60K']
+    TEMP = ['60K']#,'30K', '40K', '50K', '60K']
 
     for i in xrange(1, max_core + 1):
         s = 'Cell_Count%d' % i

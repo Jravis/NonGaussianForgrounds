@@ -11,7 +11,7 @@ Haslam_512 = hp.fitsfunc.read_map(name)
 Haslam_128 = hp.pixelfunc.ud_grade(Haslam_512, nside_out=128)
 
 nside_f_est = 128
-f_name ='/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_binary_128/Mask_30K_binary_ns_128.fits'
+f_name = '/dataspace/sandeep/Bispectrum_data/Input_Maps/mask_binary_128/Mask_60K_binary_ns_128.fits'
 ap_map = hp.fitsfunc.read_map(f_name, verbose=False)
 npix = hp.nside2npix(nside_f_est)
 haslam = Haslam_128 * ap_map
@@ -97,7 +97,7 @@ kurti = np.zeros((1000, nbin-1), dtype=np.float32)
 
 for fn in xrange(0, 1000):
     s1 = '/dataspace/sandeep/Bispectrum_data'
-    s2 = '/Gaussian_30K_test/Gaussian_30K_Maps/haslam_30KgaussMap_%d.fits' % fn
+    s2 = '/Gaussian_60K_test/Gaussian_60K_Maps/haslam_60KgaussMap_%d.fits' % fn
 
     filename = s1+s2
     haslam = hp.fitsfunc.read_map(filename, verbose=False)*ap_map
@@ -163,7 +163,7 @@ ax1.plot(I, skewr_actual, '-', color='r', linewidth=2, label='Actual')
 
 ax1.set_xlabel(r"$I$", fontsize=18)
 ax1.set_ylabel(r"$S_{3}$", fontsize=18)
-ax1.set_title("30K Real alm")
+ax1.set_title("60K Real alm")
 ax1.set_xlim(0, 10)
 plt.minorticks_on()
 plt.tick_params(axis='both', which='minor', length=5, width=2, labelsize=10)
@@ -182,7 +182,7 @@ ax2.plot(I, skewi_actual, '-', color='r', linewidth=2, label='Actual')
 
 ax2.set_xlabel(r"$I$", fontsize=18)
 ax2.set_ylabel(r"$S_{3}$", fontsize=18)
-ax2.set_title("30K Imag alm")
+ax2.set_title("60K Imag alm")
 
 ax2.set_xlim(0, 10)
 plt.minorticks_on()
@@ -202,7 +202,7 @@ ax3.fill_between(I, (kurtr_mean-2.*kurtr_std_dev), (kurtr_mean+2.*kurtr_std_dev)
 ax3.plot(I, (kurtr_mean), '-', color='m', linewidth=2, label='mean')
 ax3.plot(I, kurtr_actual, '-', color='r', linewidth=2, label='Actual')
 
-#ax3.set_title("30K Real alm")
+#ax3.set_title("60K Real alm")
 ax3.set_xlabel(r"$I$", fontsize=18)
 ax3.set_ylabel(r"$S_{4}$", fontsize=18)
 ax3.set_xlim(0, 10)
@@ -219,7 +219,7 @@ ax4.fill_between(I, (kurti_mean-2.*kurti_std_dev), (kurti_mean+2.*kurti_std_dev)
 ax4.plot(I, (kurti_mean), '-', color='m', linewidth=2, label='mean')
 ax4.plot(I, kurti_actual, '-', color='r', linewidth=2, label='Actual')
 
-#ax4.set_title("30K Imag alm")
+#ax4.set_title("60K Imag alm")
 ax4.set_xlabel(r"$I$", fontsize=18)
 ax4.set_ylabel(r"$S_{4}$", fontsize=18)
 ax4.set_xlim(0, 10)
@@ -229,7 +229,7 @@ plt.tick_params(axis='both', which='major', length=8, width=2, labelsize=10)
 
 plt.tight_layout()
 
-fig.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_30K_test/bin_skewness_Kurtosis_30K.pdf", dpi=600)
+fig.savefig("/dataspace/sandeep/Bispectrum_data/Gaussian_60K_test/plots/bin_skewness_Kurtosis_60K.png", dpi=600)
 
 plt.show()
 
